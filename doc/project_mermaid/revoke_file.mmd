@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    C->>S: Ask the server for the file's folder's metadata
+    S-->>C: Send the file's folder's metadata
+
+    C->>S: Ask the server for the file's metadata
+    S-->>C: Send the file's metadata
+
+    C->>C: Decrypt the folder's encrypted key with the user's private key
+
+    C->>C: Decrypt the file's encrypted key with the folder's decrypted key
+
+    C->>C: Decrypt the file's encrypted name with the file's decrypted key
+    C->>C: Decrypt the file's encrypted data with the file's decrypted key
+
+    C->>C: Genereate 3 new random nonces (nonce_data, nonce_key, nonce_name)
+
+    C->>C: Generate a new random file key
+
+    C->>C: Encrypt the file's data with the key and the nonce_data using AES-GCM
+    C->>C: Encrypt the file's name with the key and the nonce_name using AES-GCM
+
+    C->>C: Encrypt the file key with the folder's decrypted key and nonce_key using AES-GCM
+
+    C->>S: Send the encrypted file's data (with tag), the encrypted file's name (with tag), the 3 nonces and the encrypted file key

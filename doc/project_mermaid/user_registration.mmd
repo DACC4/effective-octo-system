@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    C->>C: Ask user for a username and password
+    C->>C: Generate ed25519 keypair
+    C->>C: Compute a symetric key from the password using argon2id
+    C->>C: Encrypt the private key with the symetric key using AES-GCM
+    C->>C: Authenticate the public key using HMAC-SHA256 with the symetric key
+    C->>S: Send the username, password salt, public key, public key mac and encrypted private key to the server
+    S-->>C: Send a challenge to the client
+    C->>C: Sign the challenge with the private key
+    C->>S: Send the signed challenge to the server
+    S->>S: Verify the signature with the public key

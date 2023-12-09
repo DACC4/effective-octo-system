@@ -1,0 +1,16 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    C->>S: Ask the server for the file's folder's metadata
+    S-->>C: Send the file's folder's metadata
+
+    C->>S: Ask the server for the file's metadata
+    S-->>C: Send the file's metadata
+
+    C->>C: Decrypt the folder's encrypted key with the user's private key
+
+    C->>C: Decrypt the file's encrypted key with the folder's decrypted key
+
+    C->>C: Decrypt the file's encrypted name with the file's decrypted key
+    C->>C: Decrypt the file's encrypted data with the file's decrypted key

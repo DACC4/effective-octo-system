@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    S->>C: Ask to create root folder
+
+    C->>C: Generate random seed
+    C->>C: Generate random key
+
+    C->>C: Encrypt key with user public key
+
+    C->>S: Send seed and encrypted key
+
+    S->>S: Store user's root folder seed and encrypted key

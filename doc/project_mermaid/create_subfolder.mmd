@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    C->>S: Ask server for the encrypted key of the parent folder
+    S-->>C: Return the encrypted key of the parent folder
+
+    C->>C: Decrypt the parent's folder key using the user's private key
+
+    C->>C: Generate a random seed
+    C->>C: Compute new folder's key using argon2id with the seed as salt and the parent's folder key as password
+    C->>C: Encrypt the new folder's key using the user's public key
+
+        C->>C: Ask user for a folder name
+    C->>C: Generate a random nonce
+    C->>C: Encrypt the folder name using the new folder's key and the nonce
+
+    C->>S: Ask server to create a new folder with the encrypted key, the encrypted folder name and the nonce

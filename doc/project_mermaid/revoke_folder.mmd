@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    C->>S: Ask the server for the list of users with access to the folder
+    S-->>C: Return the folder's users
+
+    C->>C: Decrypt the folder's key
+
+    C->>C: Change the folder's seed to a new random value
+
+    C->>C: Recompute the folder's key based on the new seed
+
+    loop for each user to whom the folder is shared
+        C->>S: Ask the server for the user's public key
+        S-->>C: Return the user's public key
+        C->>C: Encrypt the folder's key with the user's public key
+        C->>S: Send the user's encrypted folder's key to the server
+    end
+
+    loop for each file in the folder
+        C->>S: Ask the server for the file's encrypted key
+        C->>C: Decrypt the file's key using the old folder's key
+        C->>C: Recompute the file's key based on the folder's key
+        C->>C: Encrypt the file using the new file's key
+        C->>S: Send the new version of the file to the server
+    end
+
+
+    
