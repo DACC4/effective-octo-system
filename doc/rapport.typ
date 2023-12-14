@@ -182,7 +182,7 @@ The server is also responsible of verifying each user identity when they registe
 == Client-Server communication
 TLS 1.3 will be used for client-server communication. The server will be authenticated using a valid X.509 certificate. The client will verify the server's certificate and will only communicate with the server if the certificate is valid.
 
-TODO: How is the server certificate issued ?
+When connecting to the server, the client will ask the user for the server's hostname. The client will then try to connect to the server using the hostname and will verify that the server has a valid certificate for the hostname.
 
 == Threat model
 The following are the various parts of our threat model:
@@ -201,3 +201,45 @@ TODO: What could we do to protect against a compromised server ? MACs or signatu
 TODO: Compute the storage overhead for a file and for a folder.
 
 = System architecture
+
+== Session handling
+A session is created for each user when they login. The session is used to remind ourself that the user is logged in and authenticated. The session is closed when the user logs out.
+
+This is done by sending the client a session token when the user logs in. The client will then send this token with each request to the server. The server will then verify the token and will only respond to the request if the token is valid.
+
+== Protocol design
+Data between the client and sever is sent in JSON format. Each request will contain the following fields:
+```json
+{
+  "session_token": "session token", # Optionnal, not needed for login and register
+  "request": "request type",
+  "data": "request data"
+}
+```
+=== Request types
+The request type can be one of the following
+==== User management
+- *register_user:* Used to register a user. The data field will contain the username, encrypted private key and public key.
+- *prepare_login:* Used to prepare a login. The data field will contain the username. The server will then send the user's encrypted private key.
+- *login:* Used to login a user. The data field will contain the username. The server will then send the challenge for the user.
+- *verify_login:* Used to verify a login. The data field will contain the username, the challenge and the challenge response.
+- *logout:* Used to logout a user. The data field will be empty.
+- *get_users:* Used to get the list of users. The data field will be empty.
+- *get_user_public_key:* Used to get a user's public key. The data field will contain the username.
+- *change_password:* Used to change a user's password. The data field will contain the new encrypted private key.
+
+==== Files and folders
+- *create_folder:* Used to create a folder. The data field will contain the folder's name and the parent folder's path.
+- *create_file:* Used to create a file. The data field will contain the file's name and the parent folder's path.
+- *get_file:* Used to get a file's content. The data field will contain the file's path.
+- *get_folder:* Used to get a folder's content. The data field will contain the folder's path.
+- *update_file*: Used to update a file. The data will contain the file's path, the new content and the new file's metadata.
+- *update_folder*: Used to update a folder. The data will contain the folder's path and the new folder's metadata.
+
+==== Sharing
+- *share_folder:* Used to share a folder. The data field will contain the folder's path, the user to share the folder with and the encrypted folder's key. If the folder is already shared with the user, the encrypted folder's key will be updated.
+- *share_file:* Used to share a file. The data field will contain the file's path, the user to share the file with and the encrypted file's key. If the file is already shared with the user, the encrypted file's key will be updated.
+
+==== Revoking access
+- *revoke_folder:* Used to revoke a folder. The data field will contain the folder's path and the user to revoke the folder from. This will have the effect of removing the user's encrypted folder key.
+- *revoke_file:* Used to revoke a file. The data field will contain the file's path and the user to revoke the file from. This will have the effect of removing the user's encrypted file key.

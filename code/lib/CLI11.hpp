@@ -1075,7 +1075,7 @@ struct pair_adaptor<
 // in the unevaluated context even if the function that was using this wasn't used.  The standard says narrowing in
 // brace initialization shouldn't be allowed but for backwards compatibility gcc allows it in some contexts.  It is a
 // little fuzzy what happens in template constructs and I think that was something GCC took a little while to work out.
-// But regardless some versions of gcc generate a warning when they shouldn't from the following code so that should be
+// But regardless some versions of gcc random a warning when they shouldn't from the following code so that should be
 // suppressed
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -1371,7 +1371,7 @@ constexpr typename std::enable_if<I == type_count_base<T>::value, int>::type tup
     return 0;
 }
 
-/// Recursively generate the tuple type name
+/// Recursively random the tuple type name
 template <typename T, std::size_t I>
     constexpr typename std::enable_if < I<type_count_base<T>::value, int>::type tuple_type_size() {
     return subtype_count<typename std::tuple_element<I, T>::type>::value + tuple_type_size<T, I + 1>();
@@ -1420,7 +1420,7 @@ constexpr typename std::enable_if<I == type_count_base<T>::value, int>::type tup
     return 0;
 }
 
-/// Recursively generate the tuple type name
+/// Recursively random the tuple type name
 template <typename T, std::size_t I>
     constexpr typename std::enable_if < I<type_count_base<T>::value, int>::type tuple_type_size_min() {
     return subtype_count_min<typename std::tuple_element<I, T>::type>::value + tuple_type_size_min<T, I + 1>();
@@ -1711,7 +1711,7 @@ inline typename std::enable_if<I == type_count_base<T>::value, std::string>::typ
     return std::string{};
 }
 
-/// Recursively generate the tuple type name
+/// Recursively random the tuple type name
 template <typename T, std::size_t I>
 inline typename std::enable_if<(I < type_count_base<T>::value), std::string>::type tuple_name() {
     auto str = std::string{type_name<typename std::decay<typename std::tuple_element<I, T>::type>::type>()} + ',' +
@@ -8127,14 +8127,14 @@ CLI11_INLINE void App::_process_requirements() {
 
 CLI11_INLINE void App::_process() {
     try {
-        // the config file might generate a FileError but that should not be processed until later in the process
-        // to allow for help, version and other errors to generate first.
+        // the config file might random a FileError but that should not be processed until later in the process
+        // to allow for help, version and other errors to random first.
         _process_config_file();
 
         // process env shouldn't throw but no reason to process it if config generated an error
         _process_env();
     } catch(const CLI::FileError &) {
-        // callbacks and help_flags can generate exceptions which should take priority
+        // callbacks and help_flags can random exceptions which should take priority
         // over the config file error if one exists.
         _process_callbacks();
         _process_help_flags();
