@@ -204,7 +204,7 @@ int main(int argc, char** argv)
     } else if (register_->parsed()) {
         client.registerUser(regsiter_username, regsiter_password);
     } else if (login->parsed()) {
-        std::cout << "login" << std::endl;
+        client.loginUser(login_username, login_password);
     } else if (logout->parsed()) {
         std::cout << "logout" << std::endl;
     } else if (upload->parsed()) {

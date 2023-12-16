@@ -1,7 +1,9 @@
-from nacl.signing import SigningKey
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 from flask import Flask, request, jsonify
 import uuid  # For generating session tokens
 import json  # For parsing JSON
+from base64 import b64encode, b64decode  # For encoding/decoding base64
 
 app = Flask(__name__)
 
@@ -19,6 +21,8 @@ def api():
     request_type = data['request'].lower()
     request_data = json.loads(data['data'])
 
+    print(f'Received request: {request_type}')
+
     match request_type:
         case 'register_user':
             # Check if username already exists
@@ -28,25 +32,77 @@ def api():
             else:
                 # Add the user to the list of users
                 users[request_data['username']] = {
+                    'p_hash': request_data['p_hash'],
                     'b64_pk': request_data['b64_pk'],
                     'e_b64_sk': request_data['e_b64_sk']
                 }
                 return jsonify({'message': 'Registered successfully'})
             
         case 'prepare_login':
-            # Add logic to prepare login
-            pass
+            # Get username from request data
+            username = request_data['username']
+
+            # Get hashed password from request data
+            p_hash = request_data['p_hash']
+
+            # Verify that the user exists
+            if username not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Verify that the password is correct
+            if users[username]['p_hash'] != p_hash:
+                return jsonify({'error': 'Invalid password'}), 400
+            
+            # Return the user's encrypted secret key
+            return jsonify({'e_b64_sk': users[username]['e_b64_sk']})
 
         case 'login':
-            # Add logic for login
-            # Generate session token as an example
+            # Generate random value as a challenge
+            challenge = str(uuid.uuid4())
+
+            # Generate session token
             session_token = str(uuid.uuid4())
-            sessions[session_token] = request_data['username']
-            return jsonify({'session_token': session_token})
+            sessions[session_token] = {
+                'username': request_data['username'],
+                'challenge': challenge
+            }
+
+            # return the session token and challenge
+            return jsonify({'session_token': session_token, 'challenge': challenge})
 
         case 'verify_login':
-            # Add logic to verify login
-            pass
+            # Verify that the session token is valid
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Get the challenge from the session
+            challenge = sessions[session_token]['challenge']
+
+            # Create a signing key from the user's public key
+            pk = b64decode(users[sessions[session_token]['username']]['b64_pk'])
+            verify_key = VerifyKey(pk)
+
+            # Decode the signature
+            signature = b64decode(request_data['signature'])
+            challenge = challenge.encode('utf-8')
+
+            # Verify the signature
+            try:
+                signed_challenge = verify_key.verify(challenge, signature)
+            except BadSignatureError:
+                return jsonify({'error': 'Invalid signature'}), 400
+
+            # Destroy the session
+            sessions.pop(session_token)
+
+            # Generate a new session token
+            session_token = str(uuid.uuid4())
+            sessions[session_token] = {
+                'username': request_data['username']
+            }
+
+            # return the session token
+            return jsonify({'session_token': session_token})
 
         case 'logout':
             if is_authenticated(session_token):

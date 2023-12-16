@@ -8,25 +8,18 @@
 
 #include <string>
 
+#define PASSWORD_HASH_LENGTH 64
+
 class Client
 {
-   ConnectionStatus status;
-   std::string session_token;
 
 public:
-    Client() {
-        if(Config::getInstance().getSessionToken().empty()) {
-            status = ConnectionStatus::UNAUTHENTICATED;
-        } else {
-            status = ConnectionStatus::AUTHENTICATED;
-            session_token = Config::getInstance().getSessionToken();
-        }
-    }
-
+    Client() = default;
     ~Client() = default;
 
     // Authentication
     void registerUser(const std::string& username, const std::string& password);
+    void loginUser(const std::string& username, const std::string& password);
 };
 
 

@@ -43,6 +43,7 @@ add_executable(eos ${LIBS_SOURCES}
         crypto/SymKey.cpp
         crypto/SymKey.h
         crypto/Encryptor.h
+        crypto/Signator.h
 )
 
 target_link_libraries(eos PRIVATE sodium restclient-cpp nlohmann_json::nlohmann_json)

@@ -22,11 +22,43 @@ public:
    /**
     * Register a new user
     * @param username The username
+    * @param p_hash The password hash
     * @param b64_pk The base64 encoded public key
     * @param e_b64_sk The base64 encoded encrypted private key
     * @return The response from the server
     */
-   nlohmann::json register_user(const std::string& username, const std::string& b64_pk, const std::string& e_b64_sk);
+   nlohmann::json register_user(const std::string& username, const std::string& p_hash, const std::string& b64_pk, const
+   std::string& e_b64_sk);
+
+   /**
+    * Get the encrypted private key of a user
+    * @param username The username
+    * @param passwordHash The password hash
+    * @return The encrypted private key
+    */
+   nlohmann::json prepare_login(const std::string& username, const std::string& p_hash);
+
+   /**
+    * Login a user, will return a challenge
+    * @param username The username
+    * @return The response from the server containing the challenge to sign
+    */
+    nlohmann::json login(const std::string& username);
+
+    /**
+     * Send the signed challenge to the server
+     * @param username The username
+     * @param signature The signature
+     * @return The response from the server
+     */
+    nlohmann::json verify_login(const std::string& username, const std::string& signature);
+
+    /**
+     * Get the public key of a user
+     * @param username The username
+     * @return The public key
+     */
+   nlohmann::json get_public_key(const std::string& username);
 
 private:
    WebClient();
