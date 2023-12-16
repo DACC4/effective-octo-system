@@ -21,8 +21,6 @@ void Client::registerUser(const std::string& username, const std::string& passwo
     // Get public key
     std::string pk = keyPair.pk_to_base64();
 
-    std::cout << "pk: " << pk << std::endl;
-
     // Hash password and encode as base64
     unsigned char p_hash[PASSWORD_HASH_LENGTH];
     crypto_generichash(p_hash, sizeof p_hash,
@@ -65,8 +63,6 @@ void Client::loginUser(const std::string& username, const std::string& password)
     response = webClient.get_public_key(username);
     std::string pk = response["b64_pk"];
 
-    std::cout << "pk: " << pk << std::endl;
-
     // Decrypt private key
     SymKey key = SymKey::deriveFromPassword(password, username);
     Edx25519_KeyPair keyPair = Edx25519_KeyPair(encrypted_sk, pk, key);
@@ -83,10 +79,6 @@ void Client::loginUser(const std::string& username, const std::string& password)
     // Sign challenge
     std::string signature = Signator::sign(challenge, keyPair);
 
-    bool verified = Signator::verify(challenge, signature, keyPair);
-
-    std::cout << "Verified: " << verified << std::endl;
-
     // Send signed challenge
     try {
         response = webClient.verify_login(username, signature);
@@ -94,4 +86,9 @@ void Client::loginUser(const std::string& username, const std::string& password)
     } catch (std::exception& e) {
         std::cout << "Failed to login user " << username << std::endl;
     }
+}
+
+void Client::logoutUser(const std::string& username)
+{
+    WebClient::getInstance().logout(username);
 }

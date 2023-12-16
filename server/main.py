@@ -23,6 +23,9 @@ def api():
 
     print(f'Received request: {request_type}')
 
+    print(users)
+    print(sessions)
+
     match request_type:
         case 'register_user':
             # Check if username already exists

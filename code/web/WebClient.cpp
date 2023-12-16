@@ -122,6 +122,20 @@ nlohmann::json WebClient::verify_login(const std::string& username, const std::s
     return response;
 }
 
+void WebClient::logout(const std::string& username) {
+    // Build body
+    std::string body_str = R"({"username": ")" + username + "\"}";
+    nlohmann::json body = build_body(WebActions::WebAction::LOGOUT, body_str);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200) {
+        throw std::runtime_error("Failed to logout: " + r.body);
+    }
+}
+
 nlohmann::json WebClient::get_public_key(const std::string& username){
     // Build body
     std::string body_str = R"({"username": ")" + username + "\"}";

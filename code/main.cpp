@@ -71,6 +71,8 @@ int main(int argc, char** argv)
 
     // Logout
     CLI::App* logout = app.add_subcommand("logout", "Logout from the server");
+    std::string logout_username;
+    logout->add_option("username", logout_username, "Username")->required();
 
     // Upload
     CLI::App* upload = app.add_subcommand("upload", "Upload a file to the server");
@@ -206,7 +208,7 @@ int main(int argc, char** argv)
     } else if (login->parsed()) {
         client.loginUser(login_username, login_password);
     } else if (logout->parsed()) {
-        std::cout << "logout" << std::endl;
+        client.logoutUser(logout_username);
     } else if (upload->parsed()) {
         std::cout << "upload" << std::endl;
     } else if (download->parsed()) {
@@ -232,6 +234,9 @@ int main(int argc, char** argv)
     } else if (list_shared_with_me->parsed()) {
         std::cout << "list_shared_with_me" << std::endl;
     }
+
+    // Write config file
+    app_config.save(config_path);
 
     return 0;
 }

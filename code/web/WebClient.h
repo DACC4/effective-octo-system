@@ -54,6 +54,12 @@ public:
     nlohmann::json verify_login(const std::string& username, const std::string& signature);
 
     /**
+     * Logout a user
+     * @param username The username
+     */
+    void logout(const std::string& username);
+
+    /**
      * Get the public key of a user
      * @param username The username
      * @return The public key
