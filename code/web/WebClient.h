@@ -94,7 +94,7 @@ private:
     * @param body The body of the request
     * @return The JSON body
     */
-   static nlohmann::json build_body(WebActions::WebAction action, std::string body);
+   static nlohmann::json build_body(WebActions::WebAction action, const nlohmann::json& body);
 
 public:
    WebClient(WebClient const&) = delete;

@@ -31,12 +31,16 @@ WebClient::~WebClient()
     delete conn;
 }
 
-nlohmann::json WebClient::build_body(WebActions::WebAction action, std::string body)
+nlohmann::json WebClient::build_body(WebActions::WebAction action, const nlohmann::json& body)
 {
     nlohmann::json j;
     j["request"] = WebActions::to_string(action);
-    j["data"] = body;
     j["session_token"] = Config::getInstance().getSessionToken();
+
+    if (!body.empty()) {
+        j += {"data", body};
+    }
+
     return j;
 }
 
@@ -45,10 +49,13 @@ std::string&
 e_b64_sk)
 {
     // Build body
-    std::string body_str = R"({"username": ")" + username + R"(", "p_hash": ")" + p_hash + R"(", "p_salt": ")" + p_salt + R"(", "b64_pk":
-")" + b64_pk + R"(", "e_b64_sk":
- ")" + e_b64_sk + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::REGISTER_USER, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    d_body["p_hash"] = p_hash;
+    d_body["p_salt"] = p_salt;
+    d_body["b64_pk"] = b64_pk;
+    d_body["e_b64_sk"] = e_b64_sk;
+    nlohmann::json body = build_body(WebActions::WebAction::REGISTER_USER, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -64,8 +71,9 @@ e_b64_sk)
 
 nlohmann::json WebClient::get_user_password_salt(const std::string& username) {
     // Build body
-    std::string body_str = R"({"username": ")" + username + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::GET_USER_PASSWORD_SALT, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    nlohmann::json body = build_body(WebActions::WebAction::GET_USER_PASSWORD_SALT, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -81,8 +89,10 @@ nlohmann::json WebClient::get_user_password_salt(const std::string& username) {
 
 nlohmann::json WebClient::prepare_login(const std::string& username, const std::string& p_hash) {
     // Build body
-    std::string body_str = R"({"username": ")" + username + R"(", "p_hash": ")" + p_hash + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::PREPARE_LOGIN, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    d_body["p_hash"] = p_hash;
+    nlohmann::json body = build_body(WebActions::WebAction::PREPARE_LOGIN, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -98,8 +108,9 @@ nlohmann::json WebClient::prepare_login(const std::string& username, const std::
 
 nlohmann::json WebClient::login(const std::string& username) {
     // Build body
-    std::string body_str = R"({"username": ")" + username + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::LOGIN, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    nlohmann::json body = build_body(WebActions::WebAction::LOGIN, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -120,8 +131,10 @@ nlohmann::json WebClient::login(const std::string& username) {
 
 nlohmann::json WebClient::verify_login(const std::string& username, const std::string& signature) {
     // Build body
-    std::string body_str = R"({"username": ")" + username + R"(", "signature": ")" + signature + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::VERIFY_LOGIN, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    d_body["signature"] = signature;
+    nlohmann::json body = build_body(WebActions::WebAction::VERIFY_LOGIN, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -142,8 +155,10 @@ nlohmann::json WebClient::verify_login(const std::string& username, const std::s
 
 nlohmann::json WebClient::create_root_folder(const std::string& seed, const std::string& e_b64_key) {
     // Build body
-    std::string body_str = R"({"seed": ")" + seed + R"(", "e_b64_key": ")" + e_b64_key + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::CREATE_ROOT_FOLDER, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["seed"] = seed;
+    d_body["e_b64_key"] = e_b64_key;
+    nlohmann::json body = build_body(WebActions::WebAction::CREATE_ROOT_FOLDER, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -159,8 +174,9 @@ nlohmann::json WebClient::create_root_folder(const std::string& seed, const std:
 
 void WebClient::logout(const std::string& username) {
     // Build body
-    std::string body_str = R"({"username": ")" + username + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::LOGOUT, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    nlohmann::json body = build_body(WebActions::WebAction::LOGOUT, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());
@@ -173,8 +189,9 @@ void WebClient::logout(const std::string& username) {
 
 nlohmann::json WebClient::get_public_key(const std::string& username){
     // Build body
-    std::string body_str = R"({"username": ")" + username + "\"}";
-    nlohmann::json body = build_body(WebActions::WebAction::GET_USER_PUBLIC_KEY, body_str);
+    nlohmann::json d_body = nlohmann::json();
+    d_body["username"] = username;
+    nlohmann::json body = build_body(WebActions::WebAction::GET_USER_PUBLIC_KEY, d_body);
 
     // Send request
     RestClient::Response r = conn->post(api_url, body.dump());

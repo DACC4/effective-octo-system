@@ -15,6 +15,38 @@ sessions = {}
 metadata_file = '.metadata.json'
 data_folder = 'data'
 
+"""
+folder metadata:
+{
+    # Key
+    'seed_k': '',
+    'encrypted_key': '',
+
+    # Name
+    'seed_n': '',
+    'encrypted_name': '',
+
+    # Link
+    'linked_to': ''
+}
+"""
+
+"""
+file metadata:
+{
+    # Key
+    'seed_k': '',
+    'encrypted_key': '',
+
+    # Name
+    'seed_n': '',
+    'encrypted_name': '',
+
+    # Data
+    'seed_d': '',
+}
+"""
+
 def folder_from_path(path, username):
     # Create server path
     server_path = f'{data_folder}/{username}/{path}'
@@ -41,7 +73,7 @@ def create_root_folder(username, seed, encrypted_key):
     # Create json metadata file
     with open(f'{data_folder}/{username}/{metadata_file}', 'w') as f:
         json.dump({
-            'seed': seed,
+            'seed_k': seed,
             'encrypted_key': encrypted_key,
             'linked_to': ''
         }, f)
@@ -66,7 +98,7 @@ def api():
     data = request.json
     session_token = data.get('session_token', None)
     request_type = data['request'].lower()
-    request_data = json.loads(data['data'])
+    request_data = data['data']
 
     print(f'Received request: {request_type}')
 
@@ -210,19 +242,6 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Get the parent folder
-            parent_folder = folder_from_path(request_data['parent'], sessions[session_token]['username'])
-
-            # Check if the folder already exists
-            if request_data['name'] in parent_folder['children']:
-                return jsonify({'error': 'Folder already exists'}), 400
-            
-            # Add the folder to the list of folders
-            folders[request_data['name']] = {
-                'name': request_data['name'],
-                'parent': parent_folder['name'],
-                'children': []
-            }
             pass
 
         case 'create_file':
@@ -243,8 +262,40 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to get a folder's content
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+
+            # Create server path
+            server_path = f'{data_folder}/{username}/{path}'
+
+            # Check if the path exists
+            if not os.path.exists(server_path):
+                return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Get metadata from folder
+            with open(f'{server_path}{metadata_file}', 'r') as f:
+                metadata = json.load(f)
+
+            toReturn = {
+                'seed': metadata['seed'],
+                'encrypted_key': metadata['encrypted_key'],
+                'files': [],
+                'folders': []
+            }
+
+            # Get files and folders
+            for file in os.listdir(server_path):
+                if file != metadata_file:
+                    if os.path.isfile(f'{server_path}/{file}'):
+                        # Get file metadata's file
+                        with open(f'{server_path}/{file}{metadata_file}', 'r') as f:
+                            toReturn['files'].append(json.load(f))
+                    else:
+                        # Get folder metadata
+                        toReturn['folders'].append(file)
+
+            return jsonify(toReturn)
 
         case 'update_file':
             if not is_authenticated(session_token):
