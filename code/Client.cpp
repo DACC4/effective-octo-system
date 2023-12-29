@@ -1,12 +1,5 @@
 #include "Client.h"
 
-#include "crypto/Edx25519_KeyPair.h"
-#include "web/WebClient.h"
-#include "crypto/Signator.h"
-
-#include <nlohmann/json.hpp>
-#include <iostream>
-
 void Client::registerUser(const std::string& username, const std::string& password)
 {
     // Generate keypair
@@ -22,35 +15,46 @@ void Client::registerUser(const std::string& username, const std::string& passwo
     std::string pk = keyPair.pk_to_base64();
 
     // Hash password and encode as base64
-    unsigned char p_hash[PASSWORD_HASH_LENGTH];
-    crypto_generichash(p_hash, sizeof p_hash,
-                       (const unsigned char*)password.c_str(), password.size(),
-                       nullptr, 0);
-    std::string b64_p_hash = base64_encode(p_hash, PASSWORD_HASH_LENGTH);
+    SymKey pKey = SymKey::deriveFromPassword(password);
+
+    // Encode password hash and salt as base64
+    std::string b64_p_hash = pKey.getKeyBase64();
+    std::string b64_p_salt = pKey.getSaltBase64();
 
     // Send request to server
     try {
-        nlohmann::json response = WebClient::getInstance().register_user(username, b64_p_hash, pk, encrypted_sk);
+        nlohmann::json response = WebClient::getInstance().register_user(username, b64_p_hash, b64_p_salt, pk, encrypted_sk);
         std::cout << "Successfully registered user " << username << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to register user " << username << std::endl;
+        return;
     }
 }
 
 void Client::loginUser(const std::string& username, const std::string& password)
 {
-    // Hash password and encode as base64
-    unsigned char p_hash[PASSWORD_HASH_LENGTH];
-    crypto_generichash(p_hash, sizeof p_hash,
-                       (const unsigned char*)password.c_str(), password.size(),
-                       nullptr, 0);
-    std::string b64_p_hash = base64_encode(p_hash, PASSWORD_HASH_LENGTH);
-
-    // Get encrypted private key from server
+    // Get user salt
     nlohmann::json response;
     WebClient& webClient = WebClient::getInstance();
     try {
-        response = webClient.prepare_login(username, b64_p_hash);
+        response = webClient.get_user_password_salt(username);
+    } catch (std::exception& e) {
+        std::cout << "Failed to login user " << username << std::endl;
+        return;
+    }
+
+    // Get salt
+    unsigned char salt[SYMKEY_SALT_SIZE];
+    std::string b64_salt = response["p_salt"];
+    std::string tmp = base64_decode(b64_salt);
+    std::copy(tmp.begin(), tmp.end(), salt);
+
+    // Hash password and encode as base64
+    SymKey pKey = SymKey::deriveFromPassword(password, salt);
+
+    // Get encrypted private key from server
+    try {
+        response = webClient.prepare_login(username, pKey.getKeyBase64());
     } catch (std::exception& e) {
         std::cout << "Failed to login user " << username << std::endl;
         return;
@@ -85,6 +89,19 @@ void Client::loginUser(const std::string& username, const std::string& password)
         std::cout << "Successfully logged in user " << username << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to login user " << username << std::endl;
+    }
+
+    // Generate random root folder key
+    SymKey folder_key = SymKey::random();
+
+    // Encrypt root folder key
+    std::string e_b64_key = base64_encode(Encryptor::encrypt(folder_key.getKeyBase64(), keyPair));
+
+    // Create root folder if it doesn't exist
+    try {
+        response = webClient.create_root_folder(folder_key.getSaltBase64(), e_b64_key);
+    } catch (std::exception& e) {
+        std::cout << "Failed to create root folder for user " << username << std::endl;
     }
 }
 

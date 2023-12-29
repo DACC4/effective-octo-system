@@ -19,6 +19,8 @@ set(LIBS_SOURCES
         lib/CLI11.hpp
         lib/base64.cpp
         lib/base64.h
+        crypto/Encryptor.cpp
+        crypto/Signator.cpp
 )
 
 # Client
@@ -26,7 +28,6 @@ add_executable(eos ${LIBS_SOURCES}
         main.cpp
         Client.cpp
         Client.h
-        ConnectionStatus.h
         File.cpp
         File.h
         Folder.cpp

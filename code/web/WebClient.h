@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include "WebActions.h"
 #include "../Config.h"
+#include "../crypto/Edx25519_KeyPair.h"
 
 class WebClient
 {
@@ -23,12 +24,21 @@ public:
     * Register a new user
     * @param username The username
     * @param p_hash The password hash
+    * @param p_salt The base64 encoded password salt
     * @param b64_pk The base64 encoded public key
     * @param e_b64_sk The base64 encoded encrypted private key
     * @return The response from the server
     */
-   nlohmann::json register_user(const std::string& username, const std::string& p_hash, const std::string& b64_pk, const
+   nlohmann::json register_user(const std::string& username, const std::string& p_hash, const std::string& p_salt, const std::string&
+   b64_pk, const
    std::string& e_b64_sk);
+
+    /**
+     * Get the password salt of a user
+     * @param username The username
+     * @return The password salt
+     */
+   nlohmann::json get_user_password_salt(const std::string& username);
 
    /**
     * Get the encrypted private key of a user
@@ -52,6 +62,14 @@ public:
      * @return The response from the server
      */
     nlohmann::json verify_login(const std::string& username, const std::string& signature);
+
+    /**
+     * Create the root folder for a user
+     * @param seed The folder seed
+     * @param e_b64_key The base64 encoded encrypted folder key
+     * @return The response from the server
+     */
+    nlohmann::json create_root_folder(const std::string& seed, const std::string& e_b64_key);
 
     /**
      * Logout a user

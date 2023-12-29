@@ -3,6 +3,7 @@
 
 #include <sodium.h>
 #include <string>
+#include "../lib/base64.h"
 
 #define SYMKEY_SALT_SIZE crypto_aead_aes256gcm_KEYBYTES
 #define SYMKEY_KEY_SIZE crypto_aead_aes256gcm_KEYBYTES
@@ -28,6 +29,16 @@ public:
        return const_cast<unsigned char*>(key);
    }
 
+   std::string getSaltBase64() const
+   {
+       return base64_encode(salt, sizeof salt);
+   }
+
+   std::string getKeyBase64() const
+   {
+       return base64_encode(key, sizeof key);
+   }
+
    /**
     * Generates a SymKey from random key and random nonce.
     * @return SymKey
@@ -47,7 +58,7 @@ public:
     * @param username Username to use as salt
     * @return SymKey generated from password and salt
     */
-    static SymKey deriveFromPassword(const std::string& password, const std::string& username);
+   static SymKey deriveFromPassword(const std::string& password, const std::string& username);
 
    /**
     * Derives a SymKey from a password with a given salt.

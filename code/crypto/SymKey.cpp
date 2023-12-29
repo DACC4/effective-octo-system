@@ -2,7 +2,7 @@
 
 SymKey SymKey::random()
 {
-    SymKey key;
+    SymKey key = SymKey();
     randombytes_buf(key.salt, sizeof key.salt);
     randombytes_buf(key.key, sizeof key.key);
     return key;
@@ -10,7 +10,7 @@ SymKey SymKey::random()
 
 SymKey SymKey::deriveFromPassword(const std::string& password)
 {
-    SymKey key;
+    SymKey key = SymKey();
 
     // Generate random salt
     randombytes_buf(key.salt, sizeof key.salt);
@@ -38,7 +38,7 @@ SymKey SymKey::deriveFromPassword(const std::string& password, const std::string
 
 SymKey SymKey::deriveFromPassword(const std::string& password, unsigned char salt[SYMKEY_SALT_SIZE])
 {
-    SymKey key;
+    SymKey key = SymKey();
 
     // Copy salt
     std::copy(salt, salt + sizeof key.salt, key.salt);
@@ -54,7 +54,7 @@ SymKey SymKey::deriveFromPassword(const std::string& password, unsigned char sal
 
 SymKey SymKey::deriveFromKey(SymKey key)
 {
-    SymKey newKey;
+    SymKey newKey = SymKey();
 
     // Generate random salt
     randombytes_buf(newKey.salt, sizeof newKey.salt);
@@ -71,7 +71,7 @@ SymKey SymKey::deriveFromKey(SymKey key)
 
 SymKey SymKey::deriveFromKey(SymKey key, unsigned char salt[SYMKEY_SALT_SIZE])
 {
-    SymKey newKey;
+    SymKey newKey = SymKey();
 
     // Copy salt
     std::copy(salt, salt + sizeof newKey.salt, newKey.salt);
@@ -88,7 +88,7 @@ SymKey SymKey::deriveFromKey(SymKey key, unsigned char salt[SYMKEY_SALT_SIZE])
 
 SymKey SymKey::fromKey(SymKey key)
 {
-    SymKey newKey;
+    SymKey newKey = SymKey();
 
     // Generate random salt
     randombytes_buf(newKey.salt, sizeof newKey.salt);
@@ -101,7 +101,7 @@ SymKey SymKey::fromKey(SymKey key)
 
 SymKey SymKey::fromKey(SymKey key, unsigned char salt[SYMKEY_SALT_SIZE])
 {
-    SymKey newKey;
+    SymKey newKey = SymKey();
 
     // Copy salt
     std::copy(salt, salt + sizeof newKey.salt, newKey.salt);

@@ -8,9 +8,11 @@ namespace WebActions
    enum WebAction
    {
       REGISTER_USER,
+      GET_USER_PASSWORD_SALT,
       PREPARE_LOGIN,
       LOGIN,
       VERIFY_LOGIN,
+      CREATE_ROOT_FOLDER,
       REGISTER,
       LOGOUT,
       GET_USERS,
@@ -30,9 +32,11 @@ namespace WebActions
 
    static const char* WebActionStrings[] = {
       "REGISTER_USER",
+      "GET_USER_PASSWORD_SALT",
       "PREPARE_LOGIN",
       "LOGIN",
       "VERIFY_LOGIN",
+      "CREATE_ROOT_FOLDER",
       "REGISTER",
       "LOGOUT",
       "GET_USERS",
@@ -52,7 +56,7 @@ namespace WebActions
 
    static WebAction getWebActionFromString(const std::string& str)
    {
-       for (int i = 0; i < sizeof(WebActionStrings) / sizeof(WebActionStrings[0]); i++)
+       for (unsigned i = 0; i < (sizeof(WebActionStrings) / sizeof(WebActionStrings[0])); i++)
        {
            if (str == WebActionStrings[i])
            {

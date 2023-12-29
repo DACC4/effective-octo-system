@@ -1,14 +1,18 @@
 #ifndef EFFECTIVE_OCTO_SYSTEM_CLIENT_H
 #define EFFECTIVE_OCTO_SYSTEM_CLIENT_H
 
-#include "ConnectionStatus.h"
 #include "File.h"
 #include "Folder.h"
 #include "Config.h"
+#include "crypto/Edx25519_KeyPair.h"
+#include "web/WebClient.h"
+#include "crypto/Signator.h"
+#include "crypto/Encryptor.h"
+#include "crypto/SymKey.h"
 
 #include <string>
-
-#define PASSWORD_HASH_LENGTH 64
+#include <nlohmann/json.hpp>
+#include <iostream>
 
 class Client
 {

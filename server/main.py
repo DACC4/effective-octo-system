@@ -4,12 +4,59 @@ from flask import Flask, request, jsonify
 import uuid  # For generating session tokens
 import json  # For parsing JSON
 from base64 import b64encode, b64decode  # For encoding/decoding base64
+import os
 
 app = Flask(__name__)
 
 # Dummy storage for users and sessions
 users = {}
 sessions = {}
+
+metadata_file = '.metadata.json'
+data_folder = 'data'
+
+def folder_from_path(path, username):
+    # Create server path
+    server_path = f'{data_folder}/{username}/{path}'
+
+    # Check if the path exists
+    if not os.path.exists(server_path):
+        return None
+    
+    # Get metadata from folder
+    with open(f'{server_path}{metadata_file}', 'r') as f:
+        metadata = json.load(f)
+        return metadata
+
+def create_root_folder(username, seed, encrypted_key):
+    print(f'{data_folder}/{username}')
+
+    # Check if the user already has a root folder
+    if os.path.exists(f'{data_folder}/{username}'):
+        return None
+
+    # Create a root folder
+    os.makedirs(f'{data_folder}/{username}')
+
+    # Create json metadata file
+    with open(f'{data_folder}/{username}/{metadata_file}', 'w') as f:
+        json.dump({
+            'seed': seed,
+            'encrypted_key': encrypted_key,
+            'linked_to': ''
+        }, f)
+
+def create_folder(username, name, parent, seed, encrypted_key):
+    # Create a folder
+    os.makedirs(f'{data_folder}/{username}/{parent}{name}')
+
+    # Create json metadata file
+    with open(f'{data_folder}/{username}/{parent}{name}/{metadata_file}', 'w') as f:
+        json.dump({
+            'seed': seed,
+            'encrypted_key': encrypted_key,
+            'linked_to': ''
+        }, f)
 
 def is_authenticated(session_token):
     return session_token in sessions
@@ -23,8 +70,8 @@ def api():
 
     print(f'Received request: {request_type}')
 
-    print(users)
-    print(sessions)
+    # print(users)
+    # print(sessions)
 
     match request_type:
         case 'register_user':
@@ -36,10 +83,19 @@ def api():
                 # Add the user to the list of users
                 users[request_data['username']] = {
                     'p_hash': request_data['p_hash'],
+                    'p_salt': request_data['p_salt'],
                     'b64_pk': request_data['b64_pk'],
                     'e_b64_sk': request_data['e_b64_sk']
                 }
                 return jsonify({'message': 'Registered successfully'})
+            
+        case 'get_user_password_salt':
+            # Check if username exists
+            if request_data['username'] not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            else:
+                # Return the user's salt
+                return jsonify({'p_salt': users[request_data['username']]['p_salt']})
             
         case 'prepare_login':
             # Get username from request data
@@ -106,6 +162,23 @@ def api():
 
             # return the session token
             return jsonify({'session_token': session_token})
+        
+        case 'create_root_folder':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Check if the user already has a root folder
+            if os.path.exists(f'{data_folder}/{sessions[session_token]["username"]}'):
+                return jsonify({'message': 'Root folder already exists'})
+
+            # Add the root folder to the list of folders
+            create_root_folder(
+                sessions[session_token]['username'],
+                request_data['seed'],
+                request_data['e_b64_key']
+            )
+            
+            return jsonify({'message': 'Root folder created successfully'})
 
         case 'logout':
             if is_authenticated(session_token):
@@ -137,7 +210,19 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to create a folder
+            # Get the parent folder
+            parent_folder = folder_from_path(request_data['parent'], sessions[session_token]['username'])
+
+            # Check if the folder already exists
+            if request_data['name'] in parent_folder['children']:
+                return jsonify({'error': 'Folder already exists'}), 400
+            
+            # Add the folder to the list of folders
+            folders[request_data['name']] = {
+                'name': request_data['name'],
+                'parent': parent_folder['name'],
+                'children': []
+            }
             pass
 
         case 'create_file':
@@ -209,4 +294,9 @@ def api():
     return jsonify({'message': 'Request processed'})
 
 if __name__ == '__main__':
+    # Create data folder if it doesn't exist
+    if not os.path.exists(data_folder):
+        os.makedirs(data_folder)
+
+    # https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
     app.run(debug=True, port=4242)

@@ -40,12 +40,13 @@ nlohmann::json WebClient::build_body(WebActions::WebAction action, std::string b
     return j;
 }
 
-nlohmann::json WebClient::register_user(const std::string& username, const std::string& p_hash, const std::string& b64_pk, const
+nlohmann::json WebClient::register_user(const std::string& username, const std::string& p_hash, const std::string& p_salt, const std::string& b64_pk, const
 std::string&
 e_b64_sk)
 {
     // Build body
-    std::string body_str = R"({"username": ")" + username + R"(", "p_hash": ")" + p_hash + R"(", "b64_pk": ")" + b64_pk + R"(", "e_b64_sk":
+    std::string body_str = R"({"username": ")" + username + R"(", "p_hash": ")" + p_hash + R"(", "p_salt": ")" + p_salt + R"(", "b64_pk":
+")" + b64_pk + R"(", "e_b64_sk":
  ")" + e_b64_sk + "\"}";
     nlohmann::json body = build_body(WebActions::WebAction::REGISTER_USER, body_str);
 
@@ -55,6 +56,23 @@ e_b64_sk)
     // Check response code
     if (r.code != 200) {
         throw std::runtime_error("Failed to register user: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::get_user_password_salt(const std::string& username) {
+    // Build body
+    std::string body_str = R"({"username": ")" + username + "\"}";
+    nlohmann::json body = build_body(WebActions::WebAction::GET_USER_PASSWORD_SALT, body_str);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200) {
+        throw std::runtime_error("Failed to get user salt: " + r.body);
     }
 
     // Parse response
@@ -120,6 +138,23 @@ nlohmann::json WebClient::verify_login(const std::string& username, const std::s
     Config::getInstance().setSessionToken(response["session_token"]);
 
     return response;
+}
+
+nlohmann::json WebClient::create_root_folder(const std::string& seed, const std::string& e_b64_key) {
+    // Build body
+    std::string body_str = R"({"seed": ")" + seed + R"(", "e_b64_key": ")" + e_b64_key + "\"}";
+    nlohmann::json body = build_body(WebActions::WebAction::CREATE_ROOT_FOLDER, body_str);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200) {
+        throw std::runtime_error("Failed to create root folder: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
 }
 
 void WebClient::logout(const std::string& username) {
