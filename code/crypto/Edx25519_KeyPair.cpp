@@ -92,3 +92,24 @@ void Edx25519_KeyPair::sk_from_encrypted_base64(const std::string& encrypted_bas
     std::string sk = Encryptor::decrypt(base64_decode(encrypted_base64_sk), key);
     sk_from_base64(sk);
 }
+
+std::string Edx25519_KeyPair::pk_from_sk(const std::string& base64_sk)
+{
+    // Decode base64 secret key
+    std::string tmp = base64_decode(base64_sk);
+
+    // Create buffer for secret key
+    unsigned char ed25519_skpk[crypto_sign_ed25519_SECRETKEYBYTES];
+
+    // Copy secret key to buffer
+    std::copy(tmp.begin(), tmp.end(), ed25519_skpk);
+
+    // Create buffer for public key
+    unsigned char ed25519_pk[crypto_sign_ed25519_PUBLICKEYBYTES];
+
+    // Get public key from secret key
+    crypto_sign_ed25519_sk_to_pk(ed25519_pk, ed25519_skpk);
+
+    // Return base64 encoded public key
+    return base64_encode(ed25519_pk, crypto_sign_ed25519_PUBLICKEYBYTES);
+}

@@ -57,11 +57,10 @@ public:
 
     /**
      * Send the signed challenge to the server
-     * @param username The username
      * @param signature The signature
      * @return The response from the server
      */
-    nlohmann::json verify_login(const std::string& username, const std::string& signature);
+    nlohmann::json verify_login(const std::string& signature);
 
     /**
      * Create the root folder for a user
@@ -72,10 +71,18 @@ public:
     nlohmann::json create_root_folder(const std::string& seed, const std::string& e_b64_key);
 
     /**
-     * Logout a user
-     * @param username The username
+     * Change the password of the current user
+     * @param p_hash The password hash
+     * @param p_salt The base64 encoded password salt
+     * @param e_b64_sk The base64 encoded encrypted private key
+     * @return The response from the server
      */
-    void logout(const std::string& username);
+    nlohmann::json change_password(const std::string& p_hash, const std::string& p_salt, const std::string& e_b64_sk);
+
+    /**
+     * Logout the current user
+     */
+    void logout();
 
     /**
      * Get the public key of a user

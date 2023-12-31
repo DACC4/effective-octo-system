@@ -5,6 +5,7 @@ import uuid  # For generating session tokens
 import json  # For parsing JSON
 from base64 import b64encode, b64decode  # For encoding/decoding base64
 import os
+import atexit
 
 app = Flask(__name__)
 
@@ -98,7 +99,9 @@ def api():
     data = request.json
     session_token = data.get('session_token', None)
     request_type = data['request'].lower()
-    request_data = data['data']
+
+    # Get request data (if any)
+    request_data = data.get('data', {})
 
     print(f'Received request: {request_type}')
 
@@ -168,9 +171,10 @@ def api():
             
             # Get the challenge from the session
             challenge = sessions[session_token]['challenge']
+            username = sessions[session_token]['username']
 
             # Create a signing key from the user's public key
-            pk = b64decode(users[sessions[session_token]['username']]['b64_pk'])
+            pk = b64decode(users[username]['b64_pk'])
             verify_key = VerifyKey(pk)
 
             # Decode the signature
@@ -179,7 +183,7 @@ def api():
 
             # Verify the signature
             try:
-                signed_challenge = verify_key.verify(challenge, signature)
+                verify_key.verify(challenge, signature)
             except BadSignatureError:
                 return jsonify({'error': 'Invalid signature'}), 400
 
@@ -189,7 +193,7 @@ def api():
             # Generate a new session token
             session_token = str(uuid.uuid4())
             sessions[session_token] = {
-                'username': request_data['username']
+                'username': username
             }
 
             # return the session token
@@ -232,10 +236,21 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            if request_data['username'] not in users:
+            # Get data
+            username = sessions[session_token]['username']
+            p_hash = request_data['p_hash']
+            p_salt = request_data['p_salt']
+            e_b64_sk = request_data['e_b64_sk']
+
+            # Verify that the user exists
+            if username not in users:
                 return jsonify({'error': 'User does not exist'}), 400
             
-            users[request_data['username']]['e_b64_sk'] = request_data['e_b64_sk']
+            # Store the new password
+            users[username]['p_hash'] = p_hash
+            users[username]['p_salt'] = p_salt
+            users[username]['e_b64_sk'] = e_b64_sk
+            
             return jsonify({'message': 'Password changed successfully'})
 
         case 'create_folder':
@@ -344,10 +359,25 @@ def api():
 
     return jsonify({'message': 'Request processed'})
 
+def at_exit():
+    print('Saving users to file ...')
+    # Save users to file
+    with open(f'{data_folder}/users.json', 'w') as f:
+        json.dump(users, f)
+
 if __name__ == '__main__':
     # Create data folder if it doesn't exist
     if not os.path.exists(data_folder):
         os.makedirs(data_folder)
+    else:
+        # Check if users.json exists
+        if os.path.exists(f'{data_folder}/users.json'):
+            # Load users from file
+            with open(f'{data_folder}/users.json', 'r') as f:
+                users = json.load(f)
+
+    # Register at_exit function
+    atexit.register(at_exit)
 
     # https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
     app.run(debug=True, port=4242)

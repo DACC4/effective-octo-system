@@ -85,7 +85,7 @@ void Client::loginUser(const std::string& username, const std::string& password)
 
     // Send signed challenge
     try {
-        response = webClient.verify_login(username, signature);
+        response = webClient.verify_login(signature);
         std::cout << "Successfully logged in user " << username << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to login user " << username << std::endl;
@@ -103,9 +103,60 @@ void Client::loginUser(const std::string& username, const std::string& password)
     } catch (std::exception& e) {
         std::cout << "Failed to create root folder for user " << username << std::endl;
     }
+
+    // Save private key in base64
+    Config::getInstance().setB64Sk(keyPair.sk_to_base64());
+    Config::getInstance().setUsername(username);
 }
 
-void Client::logoutUser(const std::string& username)
+void Client::changePassword(const std::string& newPassword)
 {
+    // Get private key
+    std::string b64_sk = Config::getInstance().getB64Sk();
+
+    // Get public key
+    std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
+
+    // Get username
+    std::string username = Config::getInstance().getUsername();
+
+    // Create keypair
+    Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
+
+    // Create SymKey from password
+    SymKey key = SymKey::deriveFromPassword(newPassword, username);
+
+    // Get encrypted private key
+    std::string encrypted_sk = keyPair.sk_to_encrypted_base64(key);
+
+    // Hash password and encode as base64
+    SymKey pKey = SymKey::deriveFromPassword(newPassword);
+
+    // Encode password hash and salt as base64
+    std::string b64_p_hash = pKey.getKeyBase64();
+    std::string b64_p_salt = pKey.getSaltBase64();
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().change_password(b64_p_hash, b64_p_salt, encrypted_sk);
+        std::cout << "Successfully changed password for user " << username << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to change password for user " << username << std::endl;
+        return;
+    }
+}
+
+void Client::logoutUser()
+{
+    try {
+        WebClient::getInstance().logout();
+    } catch (std::exception& e) {
+        std::cout << "Failed to logout user " << Config::getInstance().getUsername() << std::endl;
+        return;
+    }
+
+    Config::getInstance().setSessionToken("");
+    Config::getInstance().setB64Sk("");
+    Config::getInstance().setUsername("");
     WebClient::getInstance().logout(username);
 }

@@ -15,6 +15,8 @@ void Config::load(const std::string& path) {
         this->server_name = data["server_name"];
         this->server_port = data["server_port"];
         this->session_token = data["session_token"];
+        this->b64_sk = data["b64_sk"];
+        this->username = data["username"];
     } catch (json::parse_error& e) {
         std::cout << "Failed to parse config file: " << e.what() << std::endl;
     }
@@ -28,6 +30,8 @@ void Config::save(const std::string& path) {
         data["server_name"] = this->server_name;
         data["server_port"] = this->server_port;
         data["session_token"] = this->session_token;
+        data["b64_sk"] = this->b64_sk;
+        data["username"] = this->username;
 
         std::ofstream f(path);
         f << data.dump(4);

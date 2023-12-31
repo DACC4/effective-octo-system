@@ -129,10 +129,9 @@ nlohmann::json WebClient::login(const std::string& username) {
     return response;
 }
 
-nlohmann::json WebClient::verify_login(const std::string& username, const std::string& signature) {
+nlohmann::json WebClient::verify_login(const std::string& signature) {
     // Build body
     nlohmann::json d_body = nlohmann::json();
-    d_body["username"] = username;
     d_body["signature"] = signature;
     nlohmann::json body = build_body(WebActions::WebAction::VERIFY_LOGIN, d_body);
 
@@ -172,10 +171,29 @@ nlohmann::json WebClient::create_root_folder(const std::string& seed, const std:
     return nlohmann::json::parse(r.body);
 }
 
-void WebClient::logout(const std::string& username) {
+nlohmann::json WebClient::change_password(const std::string& p_hash, const std::string& p_salt, const std::string& e_b64_sk){
     // Build body
     nlohmann::json d_body = nlohmann::json();
-    d_body["username"] = username;
+    d_body["p_hash"] = p_hash;
+    d_body["p_salt"] = p_salt;
+    d_body["e_b64_sk"] = e_b64_sk;
+    nlohmann::json body = build_body(WebActions::WebAction::CHANGE_PASSWORD, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200){
+        throw std::runtime_error("Failed to change password: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+void WebClient::logout() {
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
     nlohmann::json body = build_body(WebActions::WebAction::LOGOUT, d_body);
 
     // Send request

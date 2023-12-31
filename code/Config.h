@@ -8,12 +8,16 @@ class Config
     std::string server_name;
     unsigned server_port;
     std::string session_token;
+    std::string b64_sk;
+    std::string username;
 
 private:
     Config() {
         server_name = "";
         server_port = 0;
         session_token = "";
+        b64_sk = "";
+        username = "";
     }
 
 public:
@@ -36,6 +40,12 @@ public:
     std::string getSessionToken() const {
         return session_token;
     }
+    std::string getB64Sk() const {
+        return b64_sk;
+    }
+    std::string getUsername() const {
+        return username;
+    }
 
     void setServerName(const std::string& server_name) {
         this->server_name = server_name;
@@ -47,6 +57,14 @@ public:
 
     void setSessionToken(const std::string& session_token) {
         this->session_token = session_token;
+    }
+
+    void setB64Sk(const std::string& b64_sk) {
+        this->b64_sk = b64_sk;
+    }
+
+    void setUsername(const std::string& username) {
+        this->username = username;
     }
 
     void save(const std::string& path);

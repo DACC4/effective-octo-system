@@ -69,10 +69,13 @@ int main(int argc, char** argv)
     login->add_option("username", login_username, "Username")->required();
     login->add_option("password", login_password, "Password")->required();
 
+    // Change password
+    CLI::App* change_password = app.add_subcommand("change_password", "Change the password of the current user");
+    std::string change_password_new_password;
+    change_password->add_option("new_password", change_password_new_password, "New password")->required();
+
     // Logout
     CLI::App* logout = app.add_subcommand("logout", "Logout from the server");
-    std::string logout_username;
-    logout->add_option("username", logout_username, "Username")->required();
 
     // Upload
     CLI::App* upload = app.add_subcommand("upload", "Upload a file to the server");
@@ -169,6 +172,8 @@ int main(int argc, char** argv)
         config_json["server_name"] = default_server_name;
         config_json["server_port"] = default_server_port;
         config_json["session_token"] = "";
+        config_json["b64_sk"] = "";
+        config_json["username"] = "";
         ofstream config_file_o(config_path);
         config_file_o << config_json.dump(4);
         config_file_o.close();
@@ -207,8 +212,10 @@ int main(int argc, char** argv)
         client.registerUser(regsiter_username, regsiter_password);
     } else if (login->parsed()) {
         client.loginUser(login_username, login_password);
+    } else if (change_password->parsed()) {
+        client.changePassword(change_password_new_password);
     } else if (logout->parsed()) {
-        client.logoutUser(logout_username);
+        client.logoutUser();
     } else if (upload->parsed()) {
         std::cout << "upload" << std::endl;
     } else if (download->parsed()) {

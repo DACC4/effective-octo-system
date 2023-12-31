@@ -102,6 +102,13 @@ public:
     */
    std::string sk_to_encrypted_base64(const SymKey& key);
 
+    /**
+     * Get ed25519 public key from base64 string.
+     * @param base64_pk Base64 string
+     * @return Public key
+     */
+   static std::string pk_from_sk(const std::string& base64_sk);
+
 private:
    /**
     * Generates a random ed25519 keypair.

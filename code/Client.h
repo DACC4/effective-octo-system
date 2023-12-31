@@ -24,6 +24,8 @@ public:
     // Authentication
     void registerUser(const std::string& username, const std::string& password);
     void loginUser(const std::string& username, const std::string& password);
+    void changePassword(const std::string& newPassword);
+    void logoutUser();
     void logoutUser(const std::string& username);
 };
 
