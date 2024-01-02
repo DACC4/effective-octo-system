@@ -64,11 +64,11 @@ public:
 
     /**
      * Create the root folder for a user
-     * @param seed The folder seed
+     * @param b64_seed_k The base64 encoded folder seed
      * @param e_b64_key The base64 encoded encrypted folder key
      * @return The response from the server
      */
-    nlohmann::json create_root_folder(const std::string& seed, const std::string& e_b64_key);
+    nlohmann::json create_root_folder(const std::string& b64_seed_k, const std::string& e_b64_key);
 
     /**
      * Change the password of the current user

@@ -29,6 +29,20 @@ void Client::registerUser(const std::string& username, const std::string& passwo
         std::cout << "Failed to register user " << username << std::endl;
         return;
     }
+
+    // Generate random root folder key
+    SymKey folder_key = SymKey::random();
+
+    // Encrypt root folder key
+    std::string e_b64_key = base64_encode(Encryptor::encrypt(folder_key.getKeyBase64(), keyPair));
+
+    // Create root folder if it doesn't exist
+    try {
+        nlohmann::json response = WebClient::getInstance().create_root_folder(folder_key.getSaltBase64(), e_b64_key);
+        std::cout << "Successfully created root folder for user " << username << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to create root folder for user " << username << std::endl;
+    }
 }
 
 void Client::loginUser(const std::string& username, const std::string& password)
@@ -89,19 +103,6 @@ void Client::loginUser(const std::string& username, const std::string& password)
         std::cout << "Successfully logged in user " << username << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to login user " << username << std::endl;
-    }
-
-    // Generate random root folder key
-    SymKey folder_key = SymKey::random();
-
-    // Encrypt root folder key
-    std::string e_b64_key = base64_encode(Encryptor::encrypt(folder_key.getKeyBase64(), keyPair));
-
-    // Create root folder if it doesn't exist
-    try {
-        response = webClient.create_root_folder(folder_key.getSaltBase64(), e_b64_key);
-    } catch (std::exception& e) {
-        std::cout << "Failed to create root folder for user " << username << std::endl;
     }
 
     // Save private key in base64

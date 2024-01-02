@@ -122,7 +122,15 @@ def api():
                     'b64_pk': request_data['b64_pk'],
                     'e_b64_sk': request_data['e_b64_sk']
                 }
-                return jsonify({'message': 'Registered successfully'})
+
+                # Create a session token
+                session_token = str(uuid.uuid4())
+                sessions[session_token] = {
+                    'username': request_data['username']
+                }
+                
+                # Return the session token
+                return jsonify({'session_token': session_token})
             
         case 'get_user_password_salt':
             # Check if username exists
@@ -210,7 +218,7 @@ def api():
             # Add the root folder to the list of folders
             create_root_folder(
                 sessions[session_token]['username'],
-                request_data['seed'],
+                request_data['b64_seed_k'],
                 request_data['e_b64_key']
             )
             

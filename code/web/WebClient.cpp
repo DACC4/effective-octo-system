@@ -65,8 +65,13 @@ e_b64_sk)
         throw std::runtime_error("Failed to register user: " + r.body);
     }
 
+    nlohmann::json response = nlohmann::json::parse(r.body);
+
+    // Store session token
+    Config::getInstance().setSessionToken(response["session_token"]);
+
     // Parse response
-    return nlohmann::json::parse(r.body);
+    return response;
 }
 
 nlohmann::json WebClient::get_user_password_salt(const std::string& username) {
@@ -152,10 +157,10 @@ nlohmann::json WebClient::verify_login(const std::string& signature) {
     return response;
 }
 
-nlohmann::json WebClient::create_root_folder(const std::string& seed, const std::string& e_b64_key) {
+nlohmann::json WebClient::create_root_folder(const std::string& b64_seed_k, const std::string& e_b64_key) {
     // Build body
     nlohmann::json d_body = nlohmann::json();
-    d_body["seed"] = seed;
+    d_body["b64_seed_k"] = b64_seed_k;
     d_body["e_b64_key"] = e_b64_key;
     nlohmann::json body = build_body(WebActions::WebAction::CREATE_ROOT_FOLDER, d_body);
 
