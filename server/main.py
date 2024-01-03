@@ -4,8 +4,9 @@ from flask import Flask, request, jsonify
 import uuid  # For generating session tokens
 import json  # For parsing JSON
 from base64 import b64encode, b64decode  # For encoding/decoding base64
-import os
-import atexit
+import os # For creating folders and files
+import atexit # For saving users to file
+import shutil # For deleting folders
 
 app = Flask(__name__)
 
@@ -47,6 +48,15 @@ file metadata:
     'b64_seed_d': '',
 }
 """
+
+def sanitize_path(path):
+    # Remove leading and trailing slash
+    if len(path) != 0 and path[0] == '/':
+        path = path[1:]
+    if len(path) != 0 and path[-1] == '/':
+        path = path[:-1]
+
+    return path
 
 def folder_from_path(path, username):
     # Create server path
@@ -416,10 +426,7 @@ def api():
             path = request_data['path']
 
             # Remove leading and trailing slash
-            if len(path) != 0 and path[0] == '/':
-                path = path[1:]
-            if len(path) != 0 and path[-1] == '/':
-                path = path[:-1]
+            path = sanitize_path(path)
 
             # Get file metadata
             metadata = file_from_path(path, username)
@@ -440,10 +447,7 @@ def api():
             path = request_data['path']
 
             # Remove leading and trailing slash
-            if len(path) != 0 and path[0] == '/':
-                path = path[1:]
-            if len(path) != 0 and path[-1] == '/':
-                path = path[:-1]
+            path = sanitize_path(path)
 
             # Get file metadata
             metadata = file_from_path(path, username)
@@ -469,10 +473,7 @@ def api():
             path = request_data['path']
 
             # Remove leading and trailing slash
-            if len(path) != 0 and path[0] == '/':
-                path = path[1:]
-            if len(path) != 0 and path[-1] == '/':
-                path = path[:-1]
+            path = sanitize_path(path)
 
             # Get folder metadata
             metadata = folder_from_path(path, username)
@@ -493,10 +494,7 @@ def api():
             path = request_data['path']
 
             # Remove leading and trailing slash
-            if len(path) != 0 and path[0] == '/':
-                path = path[1:]
-            if len(path) != 0 and path[-1] == '/':
-                path = path[:-1]
+            path = sanitize_path(path)
 
             if path == '':
                 folder_path = f'{data_folder}/{username}'
@@ -535,19 +533,131 @@ def api():
             # Return the folder metadata
             return jsonify(metadata)
 
-        case 'update_file':
+        case 'rename_file':
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to update a file
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            e_b64_name = request_data['e_b64_name']
+            b64_seed_n = request_data['b64_seed_n']
 
-        case 'update_folder':
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Edit the file metadata
+            metadata['e_b64_name'] = e_b64_name
+            metadata['b64_seed_n'] = b64_seed_n
+
+            # New path is old path without the last part and the new name (replace '/' with '&')
+            new_name = e_b64_name.replace('/', '&')
+            new_path = ''.join(path.split('/')[:-1]) + '/' + new_name
+
+            # Rename the file
+            os.rename(f'{data_folder}/{username}/{path}', f'{data_folder}/{username}/{new_path}')
+
+            # Remove the old metadata file
+            os.remove(f'{data_folder}/{username}/{path}{metadata_file}')
+
+            # Save the new file metadata
+            with open(f'{data_folder}/{username}/{new_path}{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'File renamed successfully'})
+
+        case 'rename_folder':
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to update a folder
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            e_b64_name = request_data['e_b64_name']
+            b64_seed_n = request_data['b64_seed_n']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get folder metadata
+            metadata = folder_from_path(path, username)
+
+            # Check if the folder exists
+            if metadata is None:
+                return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Edit the folder metadata
+            metadata['e_b64_name'] = e_b64_name
+            metadata['b64_seed_n'] = b64_seed_n
+
+            # New path is old path without the last part and the new name (replace '/' with '&')
+            new_name = e_b64_name.replace('/', '&')
+            new_path = ''.join(path.split('/')[:-1]) + '/' + new_name
+
+            # Rename the folder
+            os.rename(f'{data_folder}/{username}/{path}', f'{data_folder}/{username}/{new_path}')
+
+            # Save the folder metadata
+            with open(f'{data_folder}/{username}/{new_path}/{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'Folder renamed successfully'})
+
+        case 'delete_file':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Delete the file
+            os.remove(f'{data_folder}/{username}/{path}')
+            
+            # Delete the file metadata
+            os.remove(f'{data_folder}/{username}/{path}{metadata_file}')
+
+            return jsonify({'message': 'File deleted successfully'})
+
+        case 'delete_folder':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get folder metadata
+            metadata = folder_from_path(path, username)
+
+            # Check if the folder exists
+            if metadata is None:
+                return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Delete the folder (and its contents)
+            shutil.rmtree(f'{data_folder}/{username}/{path}')
+
+            return jsonify({'message': 'Folder deleted successfully'})
 
         case 'share_folder':
             if not is_authenticated(session_token):

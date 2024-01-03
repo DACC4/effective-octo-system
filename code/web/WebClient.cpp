@@ -288,6 +288,46 @@ nlohmann::json WebClient::create_folder(const std::string& parent, const std::st
     return nlohmann::json::parse(r.body);
 }
 
+nlohmann::json WebClient::rename_folder(const std::string& path, const std::string& e_b64_name, const std::string& b64_seed_n)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    d_body["e_b64_name"] = e_b64_name;
+    d_body["b64_seed_n"] = b64_seed_n;
+    nlohmann::json body = build_body(WebActions::WebAction::RENAME_FOLDER, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to rename folder: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::delete_folder(const std::string& path)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    nlohmann::json body = build_body(WebActions::WebAction::DELETE_FOLDER, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to delete folder: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
 nlohmann::json WebClient::create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n,
                                       const std::string& e_b64_key, const std::string& b64_seed_k, const std::string& e_b64_data,
                                       const std::string& b64_seed_d)
@@ -347,6 +387,46 @@ nlohmann::json WebClient::get_file_data(const std::string& path)
     // Check response code
     if(r.code != 200) {
         throw std::runtime_error("Failed to get file data: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::rename_file(const std::string& path, const std::string& e_b64_name, const std::string& b64_seed_n)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    d_body["e_b64_name"] = e_b64_name;
+    d_body["b64_seed_n"] = b64_seed_n;
+    nlohmann::json body = build_body(WebActions::WebAction::RENAME_FILE, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to rename file: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::delete_file(const std::string& path)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    nlohmann::json body = build_body(WebActions::WebAction::DELETE_FILE, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to delete file: " + r.body);
     }
 
     // Parse response

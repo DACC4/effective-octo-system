@@ -8,6 +8,7 @@
 #include "crypto/Encryptor.h"
 #include "crypto/SymKey.h"
 #include "Folder.h"
+#include "File.h"
 
 #include <string>
 #include <nlohmann/json.hpp>
@@ -28,17 +29,24 @@ public:
     void logoutUser();
 
     // Folder operations
-    void createFolder(const std::string& path, const std::string& name);
-    Folder getFolder(const std::string& path);
+    void createFolder(const std::string& path);
     void listFolder(const std::string& path);
+    void renameFolder(const std::string& path, const std::string& newName);
+    void deleteFolder(const std::string& path);
 
     // File operations
-    void uploadFile(const std::string& path, const std::string& localName, const std::string& name);
-    void downloadFile(const std::string& path, const std::string& name);
+    void uploadFile(const std::string& path, const std::string& localName);
+    void downloadFile(const std::string& path);
+    void renameFile(const std::string& path, const std::string& newName);
+    void deleteFile(const std::string& path);
 
 private:
     Folder getRootFolder();
     Folder getFolderFromUserPath(const std::string& path);
+    File getFileFromUserPath(const std::string& path);
+
+    std::string getFileName(const std::string& path);
+    std::string getFolderPath(const std::string& path);
 };
 
 

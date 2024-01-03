@@ -118,6 +118,22 @@ public:
 
 
     /**
+     * Rename a folder
+     * @param path Path of the folder
+     * @param e_b64_name The base64 encoded encrypted folder name
+     * @param b64_seed_n The base64 encoded folder name seed
+     * @return The response from the server
+     */
+    nlohmann::json rename_folder(const std::string& path, const std::string& e_b64_name, const std::string& b64_seed_n);
+
+    /**
+     * Delete a folder
+     * @param path Path of the folder
+     * @return The response from the server
+     */
+    nlohmann::json delete_folder(const std::string& path);
+
+    /**
      * Create a file at the given parent
      * @param parent Path of the parent folder
      * @param e_b64_name The base64 encoded encrypted file name
@@ -143,6 +159,22 @@ public:
      * @return The file's data
      */
     nlohmann::json get_file_data(const std::string& path);
+
+    /**
+     * Rename a file
+     * @param path Path of the file
+     * @param e_b64_name The base64 encoded encrypted file name
+     * @param b64_seed_n The base64 encoded file name seed
+     * @return The response from the server
+     */
+    nlohmann::json rename_file(const std::string& path, const std::string& e_b64_name, const std::string& b64_seed_n);
+
+    /**
+     * Delete a file
+     * @param path Path of the file
+     * @return The response from the server
+     */
+    nlohmann::json delete_file(const std::string& path);
 private:
    WebClient();
    ~WebClient();

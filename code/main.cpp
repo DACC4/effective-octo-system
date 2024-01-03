@@ -81,40 +81,30 @@ int main(int argc, char** argv)
     CLI::App* upload = app.add_subcommand("upload", "Upload a file to the server");
     std::string upload_path;
     std::string upload_file;
-    std::string upload_name;
-    upload->add_option("path", upload_path, "Folder in which upload the file")->required();
-    upload->add_option("file", upload_file, "File to upload")->required();
-    upload->add_option("name", upload_name, "Name of the file on the server")->required();
+    upload->add_option("path", upload_path, "File path on the server")->required();
+    upload->add_option("file", upload_file, "Local file to upload")->required();
 
     // Download
     CLI::App* download = app.add_subcommand("download", "Download a file from the server");
     std::string download_path;
-    std::string download_file;
-    download->add_option("path", download_path, "Folder in which the file is")->required();
-    download->add_option("file", download_file, "File to download")->required();
+    download->add_option("path", download_path, "File path")->required();
 
     // Delete
     CLI::App* delete_ = app.add_subcommand("delete", "Delete a file from the server");
     std::string delete_path;
-    std::string delete_file;
-    delete_->add_option("path", delete_path, "Folder in which the file is")->required();
-    delete_->add_option("file", delete_file, "File to delete")->required();
+    delete_->add_option("path", delete_path, "Path of the file to delete")->required();
 
     // Rename file
     CLI::App* rename_file = app.add_subcommand("rename_file", "Rename a file on the server");
     std::string rename_file_path;
-    std::string rename_file_file;
     std::string rename_file_new_name;
-    rename_file->add_option("path", rename_file_path, "Folder in which the file is")->required();
-    rename_file->add_option("file", rename_file_file, "File to rename")->required();
+    rename_file->add_option("path", rename_file_path, "Path of the file to rename")->required();
     rename_file->add_option("new_name", rename_file_new_name, "New name of the file")->required();
 
     // Create folder
     CLI::App* create_folder = app.add_subcommand("create_folder", "Create a folder on the server");
     std::string create_folder_path;
-    std::string create_folder_name;
-    create_folder->add_option("path", create_folder_path, "Folder in which create the new folder")->required();
-    create_folder->add_option("name", create_folder_name, "Name of the new folder")->required();
+    create_folder->add_option("path", create_folder_path, "Folder to create")->required();
 
     // Delete folder
     CLI::App* delete_folder = app.add_subcommand("delete_folder", "Delete a folder from the server");
@@ -188,7 +178,7 @@ int main(int argc, char** argv)
     app_config.load(config_path);
 
     // If no verb is specified, print help
-    if (app.get_subcommands().size() == 0) {
+    if (app.get_subcommands().empty()) {
         std::cout << app.help() << std::endl;
         return 0;
     }
@@ -221,19 +211,19 @@ int main(int argc, char** argv)
     } else if (logout->parsed()) {
         client.logoutUser();
     } else if (upload->parsed()) {
-        client.uploadFile(upload_path, upload_file, upload_name);
+        client.uploadFile(upload_path, upload_file);
     } else if (download->parsed()) {
-        client.downloadFile(download_path, download_file);
+        client.downloadFile(download_path);
     } else if (delete_->parsed()) {
-        std::cout << "delete" << std::endl;
+        client.deleteFile(delete_path);
     } else if (rename_file->parsed()) {
-        std::cout << "rename_file" << std::endl;
+        client.renameFile(rename_file_path, rename_file_new_name);
     } else if (create_folder->parsed()) {
-        client.createFolder(create_folder_path, create_folder_name);
+        client.createFolder(create_folder_path);
     } else if (delete_folder->parsed()) {
-        std::cout << "delete_folder" << std::endl;
+        client.deleteFolder(delete_folder_path);
     } else if (rename_folder->parsed()) {
-        std::cout << "rename_folder" << std::endl;
+        client.renameFolder(rename_folder_path, rename_folder_new_name);
     } else if (list->parsed()) {
         client.listFolder(list_path);
     } else if (share->parsed()) {

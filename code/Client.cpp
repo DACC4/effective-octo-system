@@ -271,15 +271,68 @@ Folder Client::getFolderFromUserPath(const std::string& path) {
     } while (true);
 }
 
-void Client::createFolder(const std::string& path, const std::string& name)
+File Client::getFileFromUserPath(const std::string& path) {
+    // Extract file name from path
+    std::string name = path.substr(path.find_last_of('/') + 1);
+
+    // Folder path is the path without the file name
+    std::string folderPath = path.substr(0, path.find_last_of('/'));
+
+    // Get folder
+    Folder tmp = getFolderFromUserPath(folderPath);
+
+    // List folder contents
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().list_folder(tmp.getPath());
+    } catch (std::exception& e) {
+        std::cout << "Failed to list folder contents" << std::endl;
+    }
+
+    // Iterate over files
+    for (auto& [i, val] : response["files"].items()) {
+        // Get file name and infos
+        std::string e_b64_name = val["e_b64_name"];
+        std::string b64_seed_n = val["b64_seed_n"];
+        std::string b64_seed_k = val["b64_seed_k"];
+        std::string b64_seed_d = val["b64_seed_d"];
+        std::string e_b64_key = val["e_b64_key"];
+
+        // Derive file key from parent folder key and file key seed
+        SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
+
+        // Create name key from name seed and file key
+        SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
+
+        // Decrypt file name
+        std::string fname = Encryptor::decrypt(e_b64_name, nameKey);
+
+        // If file name is the one we are looking for, download it
+        if (fname == name) {
+            SymKey dataKey = SymKey::fromKey(key, b64_seed_d);
+            return {fname, i, key, dataKey};
+        }
+    }
+
+    // File not found
+    throw std::runtime_error("File not found");
+}
+
+void Client::createFolder(const std::string& path)
 {
+    // Get file name
+    std::string name = getFileName(path);
+
+    // Get folder path
+    std::string folderPath = getFolderPath(path);
+
     // Get user key pair
     std::string b64_sk = Config::getInstance().getB64Sk();
     std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
     Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
 
     // Get parent folder
-    Folder parentFolder = getFolder(path);
+    Folder parentFolder = getFolderFromUserPath(folderPath);
 
     // Derive folder key
     SymKey key = SymKey::deriveFromKey(parentFolder.getKey());
@@ -307,11 +360,6 @@ void Client::createFolder(const std::string& path, const std::string& name)
         std::cout << "Failed to create folder " << name << std::endl;
         return;
     }
-}
-
-Folder Client::getFolder(const std::string& path)
-{
-    return getFolderFromUserPath(path);
 }
 
 void Client::listFolder(const std::string& path)
@@ -372,10 +420,53 @@ void Client::listFolder(const std::string& path)
     }
 }
 
-void Client::uploadFile(const std::string& path, const std::string& localName, const std::string& name)
+void Client::renameFolder(const std::string& path, const std::string& newName)
 {
     // Get folder
     Folder tmp = getFolderFromUserPath(path);
+
+    // Generate new key from same key but different salt for folder name
+    SymKey newNameKey = SymKey::fromKey(tmp.getKey());
+
+    // Encrypt folder name
+    std::string e_b64_new_name = Encryptor::encrypt(newName, newNameKey);
+
+    // Get new name key salt
+    std::string b64_seed_n = newNameKey.getSaltBase64();
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().rename_folder(tmp.getPath(), e_b64_new_name, b64_seed_n);
+        std::cout << "Successfully renamed folder " << tmp.getName() << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to rename folder " << tmp.getName() << std::endl;
+    }
+}
+
+void Client::deleteFolder(const std::string& path)
+{
+    // Get folder
+    Folder tmp = getFolderFromUserPath(path);
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().delete_folder(tmp.getPath());
+        std::cout << "Successfully deleted folder " << tmp.getName() << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to delete folder " << tmp.getName() << std::endl;
+    }
+}
+
+void Client::uploadFile(const std::string& path, const std::string& localName)
+{
+    // Get file name
+    std::string name = getFileName(path);
+
+    // Get folder path
+    std::string folderPath = getFolderPath(path);
+
+    // Get folder
+    Folder tmp = getFolderFromUserPath(folderPath);
 
     // Get file contents on disk
     try {
@@ -431,77 +522,101 @@ void Client::uploadFile(const std::string& path, const std::string& localName, c
     }
 }
 
-void Client::downloadFile(const std::string& path, const std::string& name)
+void Client::downloadFile(const std::string& path)
 {
-    // Get folder
-    Folder tmp = getFolderFromUserPath(path);
+    // Get file name
+    std::string name = getFileName(path);
 
-    // List folder contents
+    // Get file
+    File tmp = getFileFromUserPath(path);
+
     nlohmann::json response;
     try {
-        response = WebClient::getInstance().list_folder(tmp.getPath());
+        response = WebClient::getInstance().get_file_data(tmp.getPath());
     } catch (std::exception& e) {
-        std::cout << "Failed to list folder contents" << std::endl;
+        std::cout << "Failed to download file " << name << std::endl;
+        return;
     }
 
-    // Iterate over files
-    for (auto& [i, val] : response["files"].items()) {
-        // Get file name and infos
-        std::string e_b64_name = val["e_b64_name"];
-        std::string b64_seed_n = val["b64_seed_n"];
-        std::string b64_seed_k = val["b64_seed_k"];
-        std::string e_b64_key = val["e_b64_key"];
+    // Get file data
+    std::string e_b64_data = response["e_b64_data"];
 
-        // Derive file key from parent folder key and file key seed
-        SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
+    // Decrypt file data
+    std::string b64_data = Encryptor::decrypt(e_b64_data, tmp.getDataKey());
 
-        // Create name key from name seed and file key
-        SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
-
-        // Decrypt file name
-        std::string fname = Encryptor::decrypt(e_b64_name, nameKey);
-
-        // If file name is the one we are looking for, download it
-        if (fname == name) {
-            nlohmann::json dataResponse;
-            try {
-                dataResponse = WebClient::getInstance().get_file_data(i);
-            } catch (std::exception& e) {
-                std::cout << "Failed to download file " << name << std::endl;
-                return;
-            }
-
-            // Get file data
-            std::string e_b64_data = dataResponse["e_b64_data"];
-
-            // Get data salt
-            std::string b64_seed_d = val["b64_seed_d"];
-
-            // Decrypt file data
-            SymKey contentsKey = SymKey::fromKey(key, b64_seed_d);
-            std::string b64_data = Encryptor::decrypt(e_b64_data, contentsKey);
-
-            // Check if file already exists
-            std::ifstream fcheck(name);
-            if (fcheck.good()) {
-                fcheck.close();
-                // Remove file from disk
-                std::remove(name.c_str());
-            }else {
-                fcheck.close();
-            }
-
-            // Write file data to disk
-            std::ofstream file(name, std::ios::binary);
-            std::string content = base64_decode(b64_data);
-            file.write((char*)content.data(), content.size());
-            file.close();
-
-            std::cout << "Successfully downloaded file " << name << std::endl;
-            return;
-        }
+    // Check if file already exists
+    std::ifstream fcheck(name);
+    if (fcheck.good()) {
+        fcheck.close();
+        // Remove file from disk
+        std::remove(name.c_str());
+    }else {
+        fcheck.close();
     }
 
-    // File not found
-    std::cout << "File " << name << " not found" << std::endl;
+    // Write file data to disk
+    std::ofstream file(name, std::ios::binary);
+    std::string content = base64_decode(b64_data);
+    file.write((char*)content.data(), content.size());
+    file.close();
+
+    std::cout << "Successfully downloaded file " << name << std::endl;
+}
+
+void Client::renameFile(const std::string& path, const std::string& newName)
+{
+    // Get file name
+    std::string name = getFileName(path);
+
+    // Get File
+    File tmp = getFileFromUserPath(path);
+
+    // Generate new key from same key but different salt for file name
+    SymKey newNameKey = SymKey::fromKey(tmp.getKey());
+
+    // Encrypt file name
+    std::string e_b64_new_name = Encryptor::encrypt(newName, newNameKey);
+
+    // Get new name key salt
+    std::string b64_seed_n = newNameKey.getSaltBase64();
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().rename_file(tmp.getPath(), e_b64_new_name, b64_seed_n);
+        std::cout << "Successfully renamed file " << name << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to rename file " << name << std::endl;
+    }
+}
+
+void Client::deleteFile(const std::string& path)
+{
+    // Get file name
+    std::string name = getFileName(path);
+
+    // Get file
+    File tmp = getFileFromUserPath(path);
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().delete_file(tmp.getPath());
+        std::cout << "Successfully deleted file " << name << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to delete file " << name << std::endl;
+    }
+}
+
+std::string Client::getFileName(const std::string& path)
+{
+    return path.substr(path.find_last_of('/') + 1);
+}
+
+std::string Client::getFolderPath(const std::string& path)
+{
+    std::string tmp = path.substr(0, path.find_last_of('/'));
+
+    if (tmp.empty())
+        return "/";
+    else
+        return tmp;
 }
