@@ -110,7 +110,9 @@ int main(int argc, char** argv)
     // Create folder
     CLI::App* create_folder = app.add_subcommand("create_folder", "Create a folder on the server");
     std::string create_folder_path;
+    std::string create_folder_name;
     create_folder->add_option("path", create_folder_path, "Folder in which create the new folder")->required();
+    create_folder->add_option("name", create_folder_name, "Name of the new folder")->required();
 
     // Delete folder
     CLI::App* delete_folder = app.add_subcommand("delete_folder", "Delete a folder from the server");
@@ -225,13 +227,13 @@ int main(int argc, char** argv)
     } else if (rename_file->parsed()) {
         std::cout << "rename_file" << std::endl;
     } else if (create_folder->parsed()) {
-        std::cout << "create_folder" << std::endl;
+        client.createFolder(create_folder_path, create_folder_name);
     } else if (delete_folder->parsed()) {
         std::cout << "delete_folder" << std::endl;
     } else if (rename_folder->parsed()) {
         std::cout << "rename_folder" << std::endl;
     } else if (list->parsed()) {
-        std::cout << "list" << std::endl;
+        client.listFolder(list_path);
     } else if (share->parsed()) {
         std::cout << "share" << std::endl;
     } else if (revoke->parsed()) {

@@ -30,11 +30,15 @@ void Client::registerUser(const std::string& username, const std::string& passwo
         return;
     }
 
+    // Save private key in base64
+    Config::getInstance().setB64Sk(keyPair.sk_to_base64());
+    Config::getInstance().setUsername(username);
+
     // Generate random root folder key
     SymKey folder_key = SymKey::random();
 
     // Encrypt root folder key
-    std::string e_b64_key = base64_encode(Encryptor::encrypt(folder_key.getKeyBase64(), keyPair));
+    std::string e_b64_key = Encryptor::encrypt(folder_key.getKeyBase64(), keyPair);
 
     // Create root folder if it doesn't exist
     try {
@@ -159,5 +163,196 @@ void Client::logoutUser()
     Config::getInstance().setSessionToken("");
     Config::getInstance().setB64Sk("");
     Config::getInstance().setUsername("");
-    WebClient::getInstance().logout(username);
+}
+
+Folder Client::getRootFolder() {
+    // Get root folder key
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().get_folder("/");
+    } catch (std::exception& e) {
+        std::cout << "Failed to get root folder key" << std::endl;
+    }
+
+    // Get encrypted root folder key and seed
+    std::string e_b64_key = response["e_b64_key"];
+    std::string b64_seed_k = response["b64_seed_k"];
+
+    // Get private key
+    std::string b64_sk = Config::getInstance().getB64Sk();
+
+    // Get public key
+    std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
+
+    // Create keypair
+    Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
+
+    // Decrypt root folder key
+    std::string b64_key = Encryptor::decrypt(e_b64_key, keyPair);
+
+    // Create SymKey from seed and root folder key
+    SymKey key = SymKey::fromBase64(b64_key, b64_seed_k);
+
+    return {"", "", key};
+}
+
+Folder Client::getFolderFromUserPath(const std::string& path) {
+    // If user path is root, return root folder key
+    if (path == "/") {
+        return getRootFolder();
+    }
+
+    // If path doesn't start or end with "/", add it
+    std::string tmp = path;
+    if (tmp[0] != '/') {
+        tmp = "/" + tmp;
+    }
+    if (tmp[tmp.size() - 1] != '/') {
+        tmp += "/";
+    }
+
+    Folder parent = getRootFolder();
+    std::string currentPath = "/";
+    std::string currentEPath = "/";
+
+    // Iterate over path
+    do {
+        // Get root folder contents
+        nlohmann::json response;
+        try {
+            response = WebClient::getInstance().list_folder(currentEPath);
+        } catch (std::exception& e) {
+            std::cout << "Failed to get root folder contents" << std::endl;
+        }
+
+        bool found = false;
+
+        // Iterate over root folder folders
+        for (auto& [i, val] : response["folders"].items()) {
+            // Get folder name and infos
+            std::string e_b64_name = val["e_b64_name"];
+            std::string b64_seed_n = val["b64_seed_n"];
+            std::string b64_seed_k = val["b64_seed_k"];
+            std::string e_b64_key = val["e_b64_key"];
+
+            // Derive folder key from parent folder key and folder key seed
+            SymKey key = SymKey::deriveFromKey(parent.getKey(), b64_seed_k);
+
+            // Create name key from name seed and folder key
+            SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
+
+            // Decrypt folder name
+            std::string name = Encryptor::decrypt(e_b64_name, nameKey);
+
+            // Folder path
+            std::string folderPath = currentPath + name + "/";
+            std::string folderEPath = i + "/";
+
+            // If folder path is the one we are looking for, return encrypted folder path
+            if (folderPath == tmp) {
+                return {name, folderEPath, key};
+            }
+
+            // Check if the path starts with the current folder path
+            if (tmp.find(folderPath) == 0) {
+                // If so, set current folder as parent folder
+                parent = {name, folderEPath, key};
+                currentPath = folderPath;
+                currentEPath = folderEPath;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            // If path is not found, throw exception
+            throw std::runtime_error("Folder not found");
+        }
+    } while (true);
+}
+
+void Client::createFolder(const std::string& path, const std::string& name)
+{
+    // Get user key pair
+    std::string b64_sk = Config::getInstance().getB64Sk();
+    std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
+    Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
+
+    // Get parent folder
+    Folder parentFolder = getFolder(path);
+
+    // Derive folder key
+    SymKey key = SymKey::deriveFromKey(parentFolder.getKey());
+
+    // Get key salt, will be used to derive folder key
+    std::string b64_seed_k = key.getSaltBase64();
+
+    // Generate new key from same key but different salt
+    SymKey nameKey = SymKey::fromKey(key);
+
+    // Encrypt folder name
+    std::string e_b64_name = Encryptor::encrypt(name, nameKey);
+
+    // Get all the data required to create the folder
+    std::string b64_seed_n = nameKey.getSaltBase64();
+
+    // Encrypt folder key
+    std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
+
+    // Send request to server
+    try {
+        nlohmann::json response = WebClient::getInstance().create_folder(parentFolder.getPath(), e_b64_name, b64_seed_n, e_b64_key, b64_seed_k);
+        std::cout << "Successfully created folder " << name << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to create folder " << name << std::endl;
+        return;
+    }
+}
+
+Folder Client::getFolder(const std::string& path)
+{
+    return getFolderFromUserPath(path);
+}
+
+void Client::listFolder(const std::string& path)
+{
+    // Get folder
+    Folder tmp = getFolderFromUserPath(path);
+
+    // List folder contents
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().list_folder(tmp.getPath());
+    } catch (std::exception& e) {
+        std::cout << "Failed to list folder contents" << std::endl;
+    }
+
+    // Iterate over folders
+    std::cout << "Folders:" << std::endl;
+    for (auto& [i, val] : response["folders"].items()) {
+        // Get folder name and infos
+        std::string e_b64_name = val["e_b64_name"];
+        std::string b64_seed_n = val["b64_seed_n"];
+        std::string b64_seed_k = val["b64_seed_k"];
+        std::string e_b64_key = val["e_b64_key"];
+
+        // Derive folder key from parent folder key and folder key seed
+        SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
+
+        // Create name key from name seed and folder key
+        SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
+
+        // Decrypt folder name
+        std::string name = Encryptor::decrypt(e_b64_name, nameKey);
+
+        // Print folder name
+        std::cout << "  - " << name << std::endl;
+    }
+
+    // Iterate over files
+    std::cout << "Files:" << std::endl;
+    for (auto& [i, val] : response["files"].items()) {
+        // TODO : Decrypt file name
+        std::cout << "  - " << i << std::endl;
+    }
 }

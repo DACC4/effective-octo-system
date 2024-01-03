@@ -11,13 +11,13 @@ namespace Encryptor
     * Encrypts the content with the given key.
     * @param content Content to encrypt
     * @param key Key to encrypt with
-    * @return Encrypted content
+    * @return Base64 encoded encrypted content
     */
    std::string encrypt(const std::string& content, const SymKey& key);
 
    /**
     * Decrypts the content with the given key.
-    * @param content Content to decrypt
+    * @param content Base64 encoded content to decrypt
     * @param key Key to decrypt with
     * @return Decrypted content
     */
@@ -27,13 +27,13 @@ namespace Encryptor
     * Encrypts the content with the given key pair.
     * @param content Content to encrypt
     * @param key Key to encrypt with
-    * @return Encrypted content
+    * @return Base64 encoded encrypted content
     */
    std::string encrypt(const std::string& content, const Edx25519_KeyPair& key);
 
    /**
     * Decrypts the content with the given key pair.
-    * @param content Content to decrypt
+    * @param content Base64 encoded content to decrypt
     * @param key Key to decrypt with
     * @return Decrypted content
     */

@@ -19,8 +19,6 @@ set(LIBS_SOURCES
         lib/CLI11.hpp
         lib/base64.cpp
         lib/base64.h
-        crypto/Encryptor.cpp
-        crypto/Signator.cpp
 )
 
 # Client
@@ -28,12 +26,10 @@ add_executable(eos ${LIBS_SOURCES}
         main.cpp
         Client.cpp
         Client.h
-        File.cpp
-        File.h
-        Folder.cpp
-        Folder.h
         Config.cpp
         Config.h
+        Folder.cpp
+        Folder.h
 
         web/WebClient.cpp
         web/WebClient.h
@@ -43,7 +39,9 @@ add_executable(eos ${LIBS_SOURCES}
         crypto/Edx25519_KeyPair.h
         crypto/SymKey.cpp
         crypto/SymKey.h
+        crypto/Encryptor.cpp
         crypto/Encryptor.h
+        crypto/Signator.cpp
         crypto/Signator.h
 )
 

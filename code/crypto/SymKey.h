@@ -7,8 +7,10 @@
 
 #define SYMKEY_SALT_SIZE crypto_aead_aes256gcm_KEYBYTES
 #define SYMKEY_KEY_SIZE crypto_aead_aes256gcm_KEYBYTES
-#define SYMKEY_OPSLIMIT crypto_pwhash_OPSLIMIT_INTERACTIVE
-#define SYMKEY_MEMLIMIT crypto_pwhash_MEMLIMIT_INTERACTIVE
+#define SYMKEY_OPSLIMIT crypto_pwhash_OPSLIMIT_MIN
+#define SYMKEY_PASSWORD_OPSLIMIT crypto_pwhash_OPSLIMIT_MODERATE
+#define SYMKEY_MEMLIMIT crypto_pwhash_MEMLIMIT_MIN
+#define SYMKEY_PASSWORD_MEMLIMIT crypto_pwhash_MEMLIMIT_MODERATE
 #define SYMKEY_ALG crypto_pwhash_ALG_ARGON2ID13
 
 class SymKey
@@ -78,10 +80,10 @@ public:
    /**
     * Derives a SymKey from a SymKey with a given salt.
     * @param key SymKey to derive from
-    * @param salt Salt
+    * @param salt Base64 encoded salt
     * @return SymKey generated from key and salt
     */
-   static SymKey deriveFromKey(SymKey key, unsigned char salt[SYMKEY_SALT_SIZE]);
+   static SymKey deriveFromKey(SymKey key, const std::string& salt);
 
    /**
     * Generates a SymKey from a given key. Will use the same key but a random salt.
@@ -93,10 +95,18 @@ public:
    /**
     * Generates a SymKey from a given key and salt.
     * @param key Key to generate SymKey from
-    * @param salt Salt to use
+    * @param salt Base64 encoded salt to use
     * @return SymKey generated from key and salt
     */
-   static SymKey fromKey(SymKey key, unsigned char salt[SYMKEY_SALT_SIZE]);
+   static SymKey fromKey(SymKey key, const std::string& salt);
+
+    /**
+     * Generates a SymKey from a given key and salt.
+     * @param key Key to generate SymKey from
+     * @param salt Salt to use
+     * @return SymKey generated from key and salt
+     */
+   static SymKey fromBase64(const std::string& keyBase64, const std::string& saltBase64);
 };
 
 #endif //EFFECTIVE_OCTO_SYSTEM_SYMKEY_H

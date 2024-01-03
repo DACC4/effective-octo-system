@@ -72,7 +72,7 @@ std::string Edx25519_KeyPair::sk_to_encrypted_base64(const SymKey& key)
 {
     std::string sk = sk_to_base64();
 
-    return base64_encode(Encryptor::encrypt(sk, key));
+    return Encryptor::encrypt(sk, key);
 }
 
 void Edx25519_KeyPair::pk_from_base64(const std::string& base64_pk)
@@ -89,7 +89,7 @@ void Edx25519_KeyPair::sk_from_base64(const std::string& base64_sk)
 
 void Edx25519_KeyPair::sk_from_encrypted_base64(const std::string& encrypted_base64_sk, const SymKey& key)
 {
-    std::string sk = Encryptor::decrypt(base64_decode(encrypted_base64_sk), key);
+    std::string sk = Encryptor::decrypt(encrypted_base64_sk, key);
     sk_from_base64(sk);
 }
 

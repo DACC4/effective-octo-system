@@ -91,6 +91,31 @@ public:
      */
    nlohmann::json get_public_key(const std::string& username);
 
+   /**
+    * Get the folder at the given path
+    * @param path Path of the folder
+    * @return The folder's metadata
+    */
+   nlohmann::json get_folder(const std::string& path);
+
+    /**
+     * List the contents of a folder
+     * @param path Path of the folder
+     * @return The contents of the folder
+     */
+    nlohmann::json list_folder(const std::string& path);
+
+   /**
+    * Create a folder at the given parent
+    * @param parent Path of the parent folder
+    * @param e_b64_name The base64 encoded encrypted folder name
+    * @param b64_seed_n The base64 encoded folder name seed
+    * @param e_b64_key The base64 encoded encrypted folder key
+    * @param b64_seed_k The base64 encoded folder key seed
+    * @return The response from the server
+    */
+    nlohmann::json create_folder(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& e_b64_key, const std::string& b64_seed_k);
+
 private:
    WebClient();
    ~WebClient();
