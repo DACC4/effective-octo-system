@@ -287,3 +287,68 @@ nlohmann::json WebClient::create_folder(const std::string& parent, const std::st
     // Parse response
     return nlohmann::json::parse(r.body);
 }
+
+nlohmann::json WebClient::create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n,
+                                      const std::string& e_b64_key, const std::string& b64_seed_k, const std::string& e_b64_data,
+                                      const std::string& b64_seed_d)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["parent"] = parent;
+    d_body["e_b64_name"] = e_b64_name;
+    d_body["b64_seed_n"] = b64_seed_n;
+    d_body["e_b64_key"] = e_b64_key;
+    d_body["b64_seed_k"] = b64_seed_k;
+    d_body["e_b64_data"] = e_b64_data;
+    d_body["b64_seed_d"] = b64_seed_d;
+    nlohmann::json body = build_body(WebActions::WebAction::CREATE_FILE, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to create file: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::get_file(const std::string& path)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    nlohmann::json body = build_body(WebActions::WebAction::GET_FILE, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to get file: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::get_file_data(const std::string& path)
+{
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    nlohmann::json body = build_body(WebActions::WebAction::GET_FILE_DATA, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to get file data: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}

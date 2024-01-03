@@ -12,6 +12,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <fstream>
 
 class Client
 {
@@ -30,6 +31,10 @@ public:
     void createFolder(const std::string& path, const std::string& name);
     Folder getFolder(const std::string& path);
     void listFolder(const std::string& path);
+
+    // File operations
+    void uploadFile(const std::string& path, const std::string& localName, const std::string& name);
+    void downloadFile(const std::string& path, const std::string& name);
 
 private:
     Folder getRootFolder();

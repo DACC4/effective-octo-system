@@ -44,7 +44,7 @@ file metadata:
     'e_b64_name': '',
 
     # Data
-    'b_64_seed_d': '',
+    'b64_seed_d': '',
 }
 """
 
@@ -70,9 +70,43 @@ def file_from_path(path, username):
         return None
     
     # Get metadata from file
-    with open(f'{server_path}/{metadata_file}', 'r') as f:
+    with open(f'{server_path}{metadata_file}', 'r') as f:
         metadata = json.load(f)
         return metadata
+    
+def get_file_content(path, username):
+    # Create server path
+    server_path = f'{data_folder}/{username}/{path}'
+
+    # Check if the path exists
+    if not os.path.exists(server_path):
+        return None
+    
+    # Get metadata from file
+    with open(f'{server_path}', 'r') as f:
+        return f.read()
+    
+def create_file(username, name, parent, seed_k, encrypted_key, seed_n, encrypted_name, seed_d, encrypted_data):
+    if parent == '':
+        file_path = f'{data_folder}/{username}/{name}'
+    else:
+        file_path = f'{data_folder}/{username}/{parent}/{name}'
+
+    # Create a file
+    with open(file_path, 'w') as f:
+        f.write(encrypted_data)
+    
+    # Create json metadata file
+    with open(f'{file_path}{metadata_file}', 'w') as f:
+        json.dump({
+            'b64_seed_k': seed_k,
+            'e_b64_key': encrypted_key,
+
+            'b64_seed_n': seed_n,
+            'e_b64_name': encrypted_name,
+
+            'b64_seed_d': seed_d,
+        }, f)
 
 def create_root_folder(username, seed, encrypted_key):
     # Check if the user already has a root folder
@@ -328,15 +362,103 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
                 
-            # Add logic to create a file
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            name = request_data['e_b64_name']
+            parent = request_data['parent']
+            seed_k = request_data['b64_seed_k']
+            encrypted_key = request_data['e_b64_key']
+            seed_n = request_data['b64_seed_n']
+            encrypted_name = request_data['e_b64_name']
+            seed_d = request_data['b64_seed_d']
+            encrypted_data = request_data['e_b64_data']
+
+            if '/' in name:
+                name = name.replace('/', '&')
+
+            if parent == '':
+                file_path = f'{data_folder}/{username}/{name}'
+                parent_path = f'{data_folder}/{username}'
+            else:
+                file_path = f'{data_folder}/{username}/{parent}/{name}'
+                parent_path = f'{data_folder}/{username}/{parent}'
+
+            # Check if the parent folder exists
+            if parent != '':
+                if not os.path.exists(f'{parent_path}'):
+                    return jsonify({'error': 'Parent folder does not exist'}), 400
+                
+            # Check if the file already exists
+            if os.path.exists(f'{file_path}'):
+                return jsonify({'error': 'File already exists'}), 400
+            
+            # Create the file
+            create_file(
+                username,
+                name,
+                parent,
+                seed_k,
+                encrypted_key,
+                seed_n,
+                encrypted_name,
+                seed_d,
+                encrypted_data
+            )
+
+            return jsonify({'message': 'File created successfully'})
 
         case 'get_file':
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to get a file's content
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+
+            # Remove leading and trailing slash
+            if len(path) != 0 and path[0] == '/':
+                path = path[1:]
+            if len(path) != 0 and path[-1] == '/':
+                path = path[:-1]
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Return the file metadata
+            return jsonify(metadata)
+
+        case 'get_file_data':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+
+            # Remove leading and trailing slash
+            if len(path) != 0 and path[0] == '/':
+                path = path[1:]
+            if len(path) != 0 and path[-1] == '/':
+                path = path[:-1]
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Get file content
+            content = get_file_content(path, username)
+
+            # Return the file  content
+            return jsonify({
+                'e_b64_data': content
+            })
 
         case 'get_folder':
             if not is_authenticated(session_token):
@@ -393,7 +515,7 @@ def api():
             folders = {}
 
             for f in os.listdir(f'{folder_path}'):
-                if f == metadata_file:
+                if f == metadata_file or f.endswith(metadata_file):
                     continue
 
                 if path == '':

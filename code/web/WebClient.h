@@ -116,6 +116,33 @@ public:
     */
     nlohmann::json create_folder(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& e_b64_key, const std::string& b64_seed_k);
 
+
+    /**
+     * Create a file at the given parent
+     * @param parent Path of the parent folder
+     * @param e_b64_name The base64 encoded encrypted file name
+     * @param b64_seed_n The base64 encoded file name seed
+     * @param e_b64_key The base64 encoded encrypted file key
+     * @param b64_seed_k The base64 encoded file key seed
+     * @param e_b64_data The base64 encoded encrypted file data
+     * @param b64_seed_d The base64 encoded file data seed
+     * @return The response from the server
+     */
+    nlohmann::json create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& e_b64_key, const std::string& b64_seed_k, const std::string& e_b64_data, const std::string& b64_seed_d);
+
+    /**
+     * Get the file at the given path
+     * @param path Path of the file
+     * @return The file's metadata
+     */
+    nlohmann::json get_file(const std::string& path);
+
+    /**
+     * Get the file data at the given path
+     * @param path Path of the file
+     * @return The file's data
+     */
+    nlohmann::json get_file_data(const std::string& path);
 private:
    WebClient();
    ~WebClient();

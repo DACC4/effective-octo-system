@@ -352,7 +352,156 @@ void Client::listFolder(const std::string& path)
     // Iterate over files
     std::cout << "Files:" << std::endl;
     for (auto& [i, val] : response["files"].items()) {
-        // TODO : Decrypt file name
-        std::cout << "  - " << i << std::endl;
+        // Get file name and infos
+        std::string e_b64_name = val["e_b64_name"];
+        std::string b64_seed_n = val["b64_seed_n"];
+        std::string b64_seed_k = val["b64_seed_k"];
+        std::string e_b64_key = val["e_b64_key"];
+
+        // Derive file key from parent folder key and file key seed
+        SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
+
+        // Create name key from name seed and file key
+        SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
+
+        // Decrypt file name
+        std::string name = Encryptor::decrypt(e_b64_name, nameKey);
+
+        // Print file name
+        std::cout << "  - " << name << std::endl;
     }
+}
+
+void Client::uploadFile(const std::string& path, const std::string& localName, const std::string& name)
+{
+    // Get folder
+    Folder tmp = getFolderFromUserPath(path);
+
+    // Get file contents on disk
+    try {
+        // Read file contents
+        std::ifstream file(localName, std::ios::binary);
+        std::vector<unsigned char> contents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        // Encode file contents as base64
+        std::string b64_contents = base64_encode(contents.data(), contents.size());
+
+        // Derive file key from folder key
+        SymKey key = SymKey::deriveFromKey(tmp.getKey());
+
+        // Get file key salt
+        std::string b64_seed_k = key.getSaltBase64();
+
+        // Generate new key from same key but different salt for file name
+        SymKey nameKey = SymKey::fromKey(key);
+
+        // Encrypt file name
+        std::string e_b64_name = Encryptor::encrypt(name, nameKey);
+        std::string b64_seed_n = nameKey.getSaltBase64();
+
+        // Generate new key from same key but different salt for file data
+        SymKey contentsKey = SymKey::fromKey(key);
+
+        // Encrypt file data
+        std::string e_b64_data = Encryptor::encrypt(b64_contents, contentsKey);
+        std::string b64_seed_d = contentsKey.getSaltBase64();
+
+        // Get user key pair
+        std::string b64_sk = Config::getInstance().getB64Sk();
+        std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
+        Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
+
+        // Encrypt folder key
+        std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
+
+        // Send request to server
+        try {
+            nlohmann::json response = WebClient::getInstance().create_file(tmp.getPath(), e_b64_name, b64_seed_n, e_b64_key, b64_seed_k,
+                                                                  e_b64_data, b64_seed_d);
+            std::cout << "Successfully uploaded file " << name << std::endl;
+        } catch (std::exception& e) {
+            std::cout << "Failed to upload file " << name << std::endl;
+            return;
+        }
+
+    } catch (std::exception& e) {
+        std::cout << "Failed to read file " << localName << std::endl;
+        return;
+    }
+}
+
+void Client::downloadFile(const std::string& path, const std::string& name)
+{
+    // Get folder
+    Folder tmp = getFolderFromUserPath(path);
+
+    // List folder contents
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().list_folder(tmp.getPath());
+    } catch (std::exception& e) {
+        std::cout << "Failed to list folder contents" << std::endl;
+    }
+
+    // Iterate over files
+    for (auto& [i, val] : response["files"].items()) {
+        // Get file name and infos
+        std::string e_b64_name = val["e_b64_name"];
+        std::string b64_seed_n = val["b64_seed_n"];
+        std::string b64_seed_k = val["b64_seed_k"];
+        std::string e_b64_key = val["e_b64_key"];
+
+        // Derive file key from parent folder key and file key seed
+        SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
+
+        // Create name key from name seed and file key
+        SymKey nameKey = SymKey::fromKey(key, b64_seed_n);
+
+        // Decrypt file name
+        std::string fname = Encryptor::decrypt(e_b64_name, nameKey);
+
+        // If file name is the one we are looking for, download it
+        if (fname == name) {
+            nlohmann::json dataResponse;
+            try {
+                dataResponse = WebClient::getInstance().get_file_data(i);
+            } catch (std::exception& e) {
+                std::cout << "Failed to download file " << name << std::endl;
+                return;
+            }
+
+            // Get file data
+            std::string e_b64_data = dataResponse["e_b64_data"];
+
+            // Get data salt
+            std::string b64_seed_d = val["b64_seed_d"];
+
+            // Decrypt file data
+            SymKey contentsKey = SymKey::fromKey(key, b64_seed_d);
+            std::string b64_data = Encryptor::decrypt(e_b64_data, contentsKey);
+
+            // Check if file already exists
+            std::ifstream fcheck(name);
+            if (fcheck.good()) {
+                fcheck.close();
+                // Remove file from disk
+                std::remove(name.c_str());
+            }else {
+                fcheck.close();
+            }
+
+            // Write file data to disk
+            std::ofstream file(name, std::ios::binary);
+            std::string content = base64_decode(b64_data);
+            file.write((char*)content.data(), content.size());
+            file.close();
+
+            std::cout << "Successfully downloaded file " << name << std::endl;
+            return;
+        }
+    }
+
+    // File not found
+    std::cout << "File " << name << " not found" << std::endl;
 }

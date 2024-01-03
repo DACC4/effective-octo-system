@@ -81,8 +81,10 @@ int main(int argc, char** argv)
     CLI::App* upload = app.add_subcommand("upload", "Upload a file to the server");
     std::string upload_path;
     std::string upload_file;
+    std::string upload_name;
     upload->add_option("path", upload_path, "Folder in which upload the file")->required();
     upload->add_option("file", upload_file, "File to upload")->required();
+    upload->add_option("name", upload_name, "Name of the file on the server")->required();
 
     // Download
     CLI::App* download = app.add_subcommand("download", "Download a file from the server");
@@ -219,9 +221,9 @@ int main(int argc, char** argv)
     } else if (logout->parsed()) {
         client.logoutUser();
     } else if (upload->parsed()) {
-        std::cout << "upload" << std::endl;
+        client.uploadFile(upload_path, upload_file, upload_name);
     } else if (download->parsed()) {
-        std::cout << "download" << std::endl;
+        client.downloadFile(download_path, download_file);
     } else if (delete_->parsed()) {
         std::cout << "delete" << std::endl;
     } else if (rename_file->parsed()) {
