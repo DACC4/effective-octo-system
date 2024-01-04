@@ -212,6 +212,23 @@ void WebClient::logout() {
     }
 }
 
+nlohmann::json WebClient::list_users() {
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    nlohmann::json body = build_body(WebActions::WebAction::GET_USERS, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if(r.code != 200) {
+        throw std::runtime_error("Failed to list users: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
 nlohmann::json WebClient::get_public_key(const std::string& username){
     // Build body
     nlohmann::json d_body = nlohmann::json();
@@ -274,7 +291,6 @@ nlohmann::json WebClient::create_folder(const std::string& parent, const std::st
     d_body["parent"] = parent;
     d_body["e_b64_name"] = e_b64_name;
     d_body["b64_seed_n"] = b64_seed_n;
-    d_body["e_b64_key"] = nlohmann::json({});
     d_body["b64_seed_k"] = b64_seed_k;
     nlohmann::json body = build_body(WebActions::WebAction::CREATE_FOLDER, d_body);
 
@@ -338,7 +354,6 @@ nlohmann::json WebClient::create_file(const std::string& parent, const std::stri
     d_body["parent"] = parent;
     d_body["e_b64_name"] = e_b64_name;
     d_body["b64_seed_n"] = b64_seed_n;
-    d_body["e_b64_key"] = nlohmann::json({});
     d_body["b64_seed_k"] = b64_seed_k;
     d_body["e_b64_data"] = e_b64_data;
     d_body["b64_seed_d"] = b64_seed_d;
@@ -428,6 +443,26 @@ nlohmann::json WebClient::delete_file(const std::string& path)
     // Check response code
     if(r.code != 200) {
         throw std::runtime_error("Failed to delete file: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key){
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    d_body["username"] = username;
+    d_body["e_b64_key"] = e_b64_key;
+    nlohmann::json body = build_body(WebActions::WebAction::SHARE_FOLDER, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200){
+        throw std::runtime_error("Failed to share folder: " + r.body);
     }
 
     // Parse response

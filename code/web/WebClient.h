@@ -85,6 +85,12 @@ public:
     void logout();
 
     /**
+     * List all users
+     * @return The list of users
+     */
+    nlohmann::json list_users();
+
+    /**
      * Get the public key of a user
      * @param username The username
      * @return The public key
@@ -173,6 +179,15 @@ public:
      * @return The response from the server
      */
     nlohmann::json delete_file(const std::string& path);
+
+    /**
+     * Share a folder with a user
+     * @param path Path of the folder
+     * @param username The username of the user to share with
+     * @param e_b64_key The base64 encoded encrypted folder key
+     * @return The response from the server
+     */
+    nlohmann::json share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key);
 private:
    WebClient();
    ~WebClient();

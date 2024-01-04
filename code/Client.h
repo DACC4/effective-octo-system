@@ -28,6 +28,32 @@ public:
     void changePassword(const std::string& newPassword);
     void logoutUser();
 
+    // User operations
+    void listUsers();
+
+    // General operations
+    void rename(const std::string& path, const std::string& newName) {
+        if (isFolder(path)) {
+            renameFolder(path, newName);
+        } else {
+            renameFile(path, newName);
+        }
+    }
+    void delete_(const std::string& path) {
+        if (isFolder(path)) {
+            deleteFolder(path);
+        } else {
+            deleteFile(path);
+        }
+    }
+    void share(const std::string& path, const std::string& username) {
+        if (isFolder(path)) {
+            shareFolder(path, username);
+        } else {
+            shareFile(path, username);
+        }
+    }
+
     // Folder operations
     void createFolder(const std::string& path);
     void listFolder(const std::string& path);
@@ -40,13 +66,29 @@ public:
     void renameFile(const std::string& path, const std::string& newName);
     void deleteFile(const std::string& path);
 
+    // Share operations
+    void shareFolder(const std::string& path, const std::string& username);
+    void shareFile(const std::string& path, const std::string& username);
+
 private:
+    std::string sharedPrefix = "/shared/";
+    std::string basePath = "/" + Config::getInstance().getUsername() + "/";
+
     Folder getRootFolder();
     Folder getFolderFromUserPath(const std::string& path);
     File getFileFromUserPath(const std::string& path);
 
+    std::string sanitizePath(const std::string& path, bool addTrailingSlash = false);
+
+    // Shared operations
+    Folder getSharedFolderFromPath(const std::string& path);
+    File getSharedFileFromPath(const std::string& path);
+
     std::string getFileName(const std::string& path);
     std::string getFolderPath(const std::string& path);
+    bool isFolder(const std::string& path);
+    bool isShared(const std::string& path);
+    std::string getSharedPath(const std::string& path);
 };
 
 

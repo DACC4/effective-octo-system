@@ -30,9 +30,6 @@ folder metadata:
     # Name
     'b64_seed_n': '',
     'e_b64_name': '',
-
-    # Link
-    'linked_to': ''
 }
 """
 
@@ -66,7 +63,7 @@ def sanitize_path(path):
 
 def folder_from_path(path, username):
     # Create server path
-    server_path = f'{data_folder}/{username}/{path}'
+    server_path = f'{data_folder}/{path}'
 
     # Check if the path exists
     if not os.path.exists(server_path):
@@ -75,11 +72,17 @@ def folder_from_path(path, username):
     # Get metadata from folder
     with open(f'{server_path}/{metadata_file}', 'r') as f:
         metadata = json.load(f)
+
+        # Check if the user has access to the folder
+        if username not in metadata['e_b64_key']:
+            return None
+        
+        # Return the folder metadata
         return metadata
 
 def file_from_path(path, username):
     # Create server path
-    server_path = f'{data_folder}/{username}/{path}'
+    server_path = f'{data_folder}/{path}'
 
     # Check if the path exists
     if not os.path.exists(server_path):
@@ -88,11 +91,16 @@ def file_from_path(path, username):
     # Get metadata from file
     with open(f'{server_path}{metadata_file}', 'r') as f:
         metadata = json.load(f)
+
+        # Check if the user has access to the file
+        if username not in metadata['e_b64_key']:
+            return None
+
         return metadata
     
-def get_file_content(path, username):
+def get_file_content(path):
     # Create server path
-    server_path = f'{data_folder}/{username}/{path}'
+    server_path = f'{data_folder}/{path}'
 
     # Check if the path exists
     if not os.path.exists(server_path):
@@ -102,11 +110,8 @@ def get_file_content(path, username):
     with open(f'{server_path}', 'r') as f:
         return f.read()
     
-def create_file(username, name, parent, seed_k, encrypted_key, seed_n, encrypted_name, seed_d, encrypted_data):
-    if parent == '':
-        file_path = f'{data_folder}/{username}/{name}'
-    else:
-        file_path = f'{data_folder}/{username}/{parent}/{name}'
+def create_file(name, parent, seed_k, encrypted_key, seed_n, encrypted_name, seed_d, encrypted_data):
+    file_path = f'{data_folder}/{parent}/{name}'
 
     # Create a file
     with open(file_path, 'w') as f:
@@ -142,11 +147,8 @@ def create_root_folder(username, seed, encrypted_key):
             'e_b64_name': "",
         }, f)
 
-def create_folder(username, name, parent, seed_k, encrypted_key, seed_n, encrypted_name):
-    if parent == '':
-        folder_path = f'{data_folder}/{username}/{name}'
-    else:
-        folder_path = f'{data_folder}/{username}/{parent}/{name}'
+def create_folder(name, parent, seed_k, encrypted_key, seed_n, encrypted_name):
+    folder_path = f'{data_folder}/{parent}/{name}'
 
     # Create a folder
     os.makedirs(folder_path, exist_ok=True)
@@ -174,6 +176,7 @@ def api():
     request_data = data.get('data', {})
 
     print(f'Received request: {request_type}')
+    print(f'Request data: {request_data}')
 
     # print(users)
     # print(sessions)
@@ -302,6 +305,9 @@ def api():
                 return jsonify({'error': 'Invalid session token'}), 401
 
         case 'get_users':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+
             return jsonify({'users': list(users.keys())})
 
         case 'get_user_public_key':
@@ -347,14 +353,11 @@ def api():
             if '/' in name:
                 name = name.replace('/', '&')
 
-            if parent == '':
-                folder_path = f'{data_folder}/{username}/{name}'
-            else:
-                folder_path = f'{data_folder}/{username}/{parent}/{name}'
+            folder_path = f'{data_folder}/{parent}/{name}'
 
             # Check if the parent folder exists
             if parent != '':
-                if not os.path.exists(f'{data_folder}/{username}/{parent}'):
+                if not os.path.exists(f'{data_folder}/{parent}'):
                     return jsonify({'error': 'Parent folder does not exist'}), 400
                 
             # Check if the folder already exists
@@ -363,7 +366,6 @@ def api():
             
             # Add the folder to the list of folders
             create_folder(
-                username,
                 name,
                 parent,
                 seed_k,
@@ -392,12 +394,8 @@ def api():
             if '/' in name:
                 name = name.replace('/', '&')
 
-            if parent == '':
-                file_path = f'{data_folder}/{username}/{name}'
-                parent_path = f'{data_folder}/{username}'
-            else:
-                file_path = f'{data_folder}/{username}/{parent}/{name}'
-                parent_path = f'{data_folder}/{username}/{parent}'
+            file_path = f'{data_folder}/{parent}/{name}'
+            parent_path = f'{data_folder}/{parent}'
 
             # Check if the parent folder exists
             if parent != '':
@@ -410,7 +408,6 @@ def api():
             
             # Create the file
             create_file(
-                username,
                 name,
                 parent,
                 seed_k,
@@ -463,7 +460,7 @@ def api():
                 return jsonify({'error': 'File does not exist'}), 400
             
             # Get file content
-            content = get_file_content(path, username)
+            content = get_file_content(path)
 
             # Return the file  content
             return jsonify({
@@ -502,10 +499,7 @@ def api():
             # Remove leading and trailing slash
             path = sanitize_path(path)
 
-            if path == '':
-                folder_path = f'{data_folder}/{username}'
-            else:
-                folder_path = f'{data_folder}/{username}/{path}'
+            folder_path = f'{data_folder}/{path}'
 
             # Get folder metadata
             metadata = folder_from_path(path, username)
@@ -522,10 +516,7 @@ def api():
                 if f == metadata_file or f.endswith(metadata_file):
                     continue
 
-                if path == '':
-                    sub_path = f
-                else:
-                    sub_path = f'{path}/{f}'
+                sub_path = f'{path}/{f}'
 
                 if os.path.isfile(f'{folder_path}/{f}'):
                     files[sub_path] = file_from_path(sub_path, username)
@@ -565,16 +556,16 @@ def api():
 
             # New path is old path without the last part and the new name (replace '/' with '&')
             new_name = e_b64_name.replace('/', '&')
-            new_path = ''.join(path.split('/')[:-1]) + '/' + new_name
+            new_path = '/'.join(path.split('/')[:-1]) + '/' + new_name
 
             # Rename the file
-            os.rename(f'{data_folder}/{username}/{path}', f'{data_folder}/{username}/{new_path}')
+            os.rename(f'{data_folder}/{path}', f'{data_folder}/{new_path}')
 
             # Remove the old metadata file
-            os.remove(f'{data_folder}/{username}/{path}{metadata_file}')
+            os.remove(f'{data_folder}/{path}{metadata_file}')
 
             # Save the new file metadata
-            with open(f'{data_folder}/{username}/{new_path}{metadata_file}', 'w') as f:
+            with open(f'{data_folder}/{new_path}{metadata_file}', 'w') as f:
                 json.dump(metadata, f)
 
             return jsonify({'message': 'File renamed successfully'})
@@ -608,10 +599,10 @@ def api():
             new_path = ''.join(path.split('/')[:-1]) + '/' + new_name
 
             # Rename the folder
-            os.rename(f'{data_folder}/{username}/{path}', f'{data_folder}/{username}/{new_path}')
+            os.rename(f'{data_folder}/{path}', f'{data_folder}/{new_path}')
 
             # Save the folder metadata
-            with open(f'{data_folder}/{username}/{new_path}/{metadata_file}', 'w') as f:
+            with open(f'{data_folder}/{new_path}/{metadata_file}', 'w') as f:
                 json.dump(metadata, f)
 
             return jsonify({'message': 'Folder renamed successfully'})
@@ -635,10 +626,10 @@ def api():
                 return jsonify({'error': 'File does not exist'}), 400
             
             # Delete the file
-            os.remove(f'{data_folder}/{username}/{path}')
+            os.remove(f'{data_folder}/{path}')
             
             # Delete the file metadata
-            os.remove(f'{data_folder}/{username}/{path}{metadata_file}')
+            os.remove(f'{data_folder}/{path}{metadata_file}')
 
             return jsonify({'message': 'File deleted successfully'})
 
@@ -661,7 +652,7 @@ def api():
                 return jsonify({'error': 'Folder does not exist'}), 400
             
             # Delete the folder (and its contents)
-            shutil.rmtree(f'{data_folder}/{username}/{path}')
+            shutil.rmtree(f'{data_folder}/{path}')
 
             return jsonify({'message': 'Folder deleted successfully'})
 
@@ -669,15 +660,75 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to share a folder
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            user = request_data['username']
+            e_b64_key = request_data['e_b64_key']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get folder metadata
+            metadata = folder_from_path(path, username)
+
+            # Check if the folder exists
+            if metadata is None:
+                return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Check if the user exists
+            if user not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Check if the user already has access to the folder
+            if user in metadata['e_b64_key']:
+                return jsonify({'error': 'User already has direct access to the folder'}), 400
+            
+            # Add the user to the list of users with access to the folder
+            metadata['e_b64_key'][user] = e_b64_key
+
+            # Save the folder metadata
+            with open(f'{data_folder}/{path}/{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'Folder shared successfully'})
 
         case 'share_file':
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to share a file
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            user = request_data['username']
+            e_b64_key = request_data['e_b64_key']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Check if the user exists
+            if user not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Check if the user already has access to the file
+            if user in metadata['e_b64_key']:
+                return jsonify({'error': 'User already has direct access to the file'}), 400
+            
+            # Add the user to the list of users with access to the file
+            metadata['e_b64_key'][user] = e_b64_key
+
+            # Save the file metadata
+            with open(f'{data_folder}/{path}/{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'File shared successfully'})
 
         case 'revoke_folder':
             if not is_authenticated(session_token):

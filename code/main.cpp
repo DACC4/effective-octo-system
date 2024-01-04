@@ -96,35 +96,34 @@ int main(int argc, char** argv)
     // List
     CLI::App* list = app.add_subcommand("list", "List the content of a folder on the server");
     std::string list_path;
+    std::string list_username;
     list->add_option("path", list_path, "Folder to list")->required();
+    list->add_option("username", list_username, "If folder is shared by another user, specify the user's username");
 
     // Share
     CLI::App* share = app.add_subcommand("share", "Share a file or folder with another user");
     std::string share_path;
-    std::string share_file;
     std::string share_username;
-    share->add_option("path", share_path, "Folder in which the file is or folder to share if no file is specified")->required();
-    share->add_option("file", share_file, "File to share");
+    share->add_option("path", share_path, "Path of the file or folder to share")->required();
     share->add_option("username", share_username, "User to share the file with")->required();
 
     // Revoke
     CLI::App* revoke = app.add_subcommand("revoke", "Revoke a user's access to a file or folder");
     std::string revoke_path;
-    std::string revoke_file;
     std::string revoke_username;
-    revoke->add_option("path", revoke_path, "Folder in which the file is or folder to revoke access to if no file is specified")->required();
-    revoke->add_option("file", revoke_file, "File to revoke access to");
+    revoke->add_option("path", revoke_path, "Path of the file or folder to revoke")->required();
     revoke->add_option("username", revoke_username, "User to revoke access to the file from")->required();
 
     // List shares
     CLI::App* list_shares = app.add_subcommand("list_shares", "List the users a file or folder is shared with");
     std::string list_shares_path;
-    std::string list_shares_file;
-    list_shares->add_option("path", list_shares_path, "Folder in which the file is or file to list shares of if no file is specified")->required();
-    list_shares->add_option("file", list_shares_file, "File to list shares of");
+    list_shares->add_option("path", list_shares_path, "Path of the file or folder to list shares of")->required();
 
     // List shared with me
     CLI::App* list_shared_with_me = app.add_subcommand("list_shared_with_me", "List the files and folders shared with me");
+
+    // List users
+    CLI::App* list_users = app.add_subcommand("list_users", "List all users");
 
     // Parse command line arguments
     try {
@@ -202,13 +201,15 @@ int main(int argc, char** argv)
     } else if (list->parsed()) {
         client.listFolder(list_path);
     } else if (share->parsed()) {
-        std::cout << "share" << std::endl;
+        client.share(share_path, share_username);
     } else if (revoke->parsed()) {
         std::cout << "revoke" << std::endl;
     } else if (list_shares->parsed()) {
         std::cout << "list_shares" << std::endl;
     } else if (list_shared_with_me->parsed()) {
         std::cout << "list_shared_with_me" << std::endl;
+    } else if (list_users->parsed()) {
+        client.listUsers();
     }
 
     // Write config file

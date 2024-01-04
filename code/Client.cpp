@@ -165,11 +165,27 @@ void Client::logoutUser()
     Config::getInstance().setUsername("");
 }
 
+void Client::listUsers()
+{
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().list_users();
+    } catch (std::exception& e) {
+        std::cout << "Failed to list users" << std::endl;
+        return;
+    }
+
+    std::cout << "Users:" << std::endl;
+    for (auto& val : response["users"]) {
+        std::cout << "  - " << val << std::endl;
+    }
+}
+
 Folder Client::getRootFolder() {
     // Get root folder key
     nlohmann::json response;
     try {
-        response = WebClient::getInstance().get_folder("/");
+        response = WebClient::getInstance().get_folder(basePath);
     } catch (std::exception& e) {
         std::cout << "Failed to get root folder key" << std::endl;
     }
@@ -193,27 +209,21 @@ Folder Client::getRootFolder() {
     // Create SymKey from seed and root folder key
     SymKey key = SymKey::fromBase64(b64_key, b64_seed_k);
 
-    return {"", "", key};
+    return {"", basePath, key};
 }
 
 Folder Client::getFolderFromUserPath(const std::string& path) {
-    // If path doesn't start or end with "/", add it
-    std::string searchPath = path;
-    if (searchPath[0] != '/') {
-        searchPath = "/" + searchPath;
-    }
-    if (searchPath[searchPath.size() - 1] != '/') {
-        searchPath += "/";
-    }
+    // Sanitize path
+    std::string searchPath = sanitizePath(path);
 
     // If user path is root, return root folder key
-    if (searchPath == "/") {
+    if (searchPath == basePath) {
         return getRootFolder();
     }
 
     Folder parent = getRootFolder();
-    std::string currentPath = "/";
-    std::string currentEPath = "/";
+    std::string currentPath = basePath;
+    std::string currentEPath = basePath;
 
     // Iterate over path
     do {
@@ -271,11 +281,14 @@ Folder Client::getFolderFromUserPath(const std::string& path) {
 }
 
 File Client::getFileFromUserPath(const std::string& path) {
+    // Sanitize path
+    std::string searchPath = sanitizePath(path);
+
     // Extract file name from path
-    std::string name = path.substr(path.find_last_of('/') + 1);
+    std::string name = getFileName(searchPath);
 
     // Folder path is the path without the file name
-    std::string folderPath = path.substr(0, path.find_last_of('/'));
+    std::string folderPath = getFolderPath(searchPath);
 
     // Get folder
     Folder tmp = getFolderFromUserPath(folderPath);
@@ -318,11 +331,19 @@ File Client::getFileFromUserPath(const std::string& path) {
 
 void Client::createFolder(const std::string& path)
 {
+    std::string searchPath = sanitizePath(path);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get file name
-    std::string name = getFileName(path);
+    std::string name = getFileName(searchPath);
 
     // Get folder path
-    std::string folderPath = getFolderPath(path);
+    std::string folderPath = getFolderPath(searchPath);
 
     // Get user key pair
     std::string b64_sk = Config::getInstance().getB64Sk();
@@ -359,8 +380,16 @@ void Client::createFolder(const std::string& path)
 
 void Client::listFolder(const std::string& path)
 {
+    std::string searchPath = sanitizePath(path, true);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get folder
-    Folder tmp = getFolderFromUserPath(path);
+    Folder tmp = getFolderFromUserPath(searchPath);
 
     // List folder contents
     nlohmann::json response;
@@ -415,8 +444,16 @@ void Client::listFolder(const std::string& path)
 
 void Client::renameFolder(const std::string& path, const std::string& newName)
 {
+    std::string searchPath = sanitizePath(path, true);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get folder
-    Folder tmp = getFolderFromUserPath(path);
+    Folder tmp = getFolderFromUserPath(searchPath);
 
     // Generate new key from same key but different salt for folder name
     SymKey newNameKey = SymKey::fromKey(tmp.getKey());
@@ -438,8 +475,16 @@ void Client::renameFolder(const std::string& path, const std::string& newName)
 
 void Client::deleteFolder(const std::string& path)
 {
+    std::string searchPath = sanitizePath(path, true);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get folder
-    Folder tmp = getFolderFromUserPath(path);
+    Folder tmp = getFolderFromUserPath(searchPath);
 
     // Send request to server
     try {
@@ -452,11 +497,19 @@ void Client::deleteFolder(const std::string& path)
 
 void Client::uploadFile(const std::string& path, const std::string& localName)
 {
+    std::string searchPath = sanitizePath(path);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get file name
-    std::string name = getFileName(path);
+    std::string name = getFileName(searchPath);
 
     // Get folder path
-    std::string folderPath = getFolderPath(path);
+    std::string folderPath = getFolderPath(searchPath);
 
     // Get folder
     Folder tmp = getFolderFromUserPath(folderPath);
@@ -514,11 +567,19 @@ void Client::uploadFile(const std::string& path, const std::string& localName)
 
 void Client::downloadFile(const std::string& path)
 {
+    std::string searchPath = sanitizePath(path);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get file name
-    std::string name = getFileName(path);
+    std::string name = getFileName(searchPath);
 
     // Get file
-    File tmp = getFileFromUserPath(path);
+    File tmp = getFileFromUserPath(searchPath);
 
     nlohmann::json response;
     try {
@@ -555,11 +616,19 @@ void Client::downloadFile(const std::string& path)
 
 void Client::renameFile(const std::string& path, const std::string& newName)
 {
-    // Get file name
-    std::string name = getFileName(path);
+    std::string searchPath = sanitizePath(path);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
 
-    // Get File
-    File tmp = getFileFromUserPath(path);
+    // Get file name
+    std::string name = getFileName(searchPath);
+
+    // Get file
+    File tmp = getFileFromUserPath(searchPath);
 
     // Generate new key from same key but different salt for file name
     SymKey newNameKey = SymKey::fromKey(tmp.getKey());
@@ -581,11 +650,19 @@ void Client::renameFile(const std::string& path, const std::string& newName)
 
 void Client::deleteFile(const std::string& path)
 {
+    std::string searchPath = sanitizePath(path);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
     // Get file name
-    std::string name = getFileName(path);
+    std::string name = getFileName(searchPath);
 
     // Get file
-    File tmp = getFileFromUserPath(path);
+    File tmp = getFileFromUserPath(searchPath);
 
     // Send request to server
     try {
@@ -594,6 +671,50 @@ void Client::deleteFile(const std::string& path)
     } catch (std::exception& e) {
         std::cout << "Failed to delete file " << name << std::endl;
     }
+}
+
+void Client::shareFolder(const std::string& path, const std::string& username) {
+    std::string searchPath = sanitizePath(path, true);
+    // If path is shared
+    if (isShared(searchPath)){
+        searchPath = getSharedPath(searchPath);
+    } else {
+        searchPath = "/" + Config::getInstance().getUsername() + searchPath;
+    }
+
+    // Get folder
+    Folder tmp = getFolderFromUserPath(searchPath);
+
+    // Get user public key
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().get_public_key(username);
+    } catch (std::exception& e) {
+        std::cout << "Failed to get public key for user " << username << std::endl;
+        return;
+    }
+
+    // Get public key
+    std::string b64_pk = response["b64_pk"];
+    auto keyPair = Edx25519_KeyPair(b64_pk);
+
+    // Get folder key
+    SymKey key = tmp.getKey();
+
+    // Encrypt folder key with user public key
+    std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
+
+    // Send request to server
+    try {
+        response = WebClient::getInstance().share_folder(tmp.getPath(), username, e_b64_key);
+        std::cout << "Successfully shared folder " << tmp.getName() << " with user " << username << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to share folder " << tmp.getName() << " with user " << username << std::endl;
+    }
+}
+
+void Client::shareFile(const std::string& path, const std::string& username) {
+
 }
 
 std::string Client::getFileName(const std::string& path)
@@ -608,5 +729,48 @@ std::string Client::getFolderPath(const std::string& path)
     if (tmp.empty())
         return "/";
     else
-        return tmp;
+        return tmp + "/";
+}
+
+bool Client::isFolder(const std::string& path)
+{
+    return path[path.size() - 1] == '/';
+}
+
+bool Client::isShared(const std::string& path)
+{
+    return path.find(sharedPrefix) == 0;
+}
+
+Folder Client::getFolderFromSharedPath(const std::string& path)
+{
+    
+    return getRootFolder();
+}
+
+File Client::getFileFromSharedPath(const std::string& path)
+{
+    return getFileFromUserPath(path);
+}
+
+std::string Client::getSharedPath(const std::string& path){
+    if (!isShared(path))
+        throw std::runtime_error("Path is not shared");
+
+    // Path is /shared/<username>/<path>
+    // Return /<username>/<path>
+    return "/" + path.substr(sharedPrefix.length());
+}
+
+std::string Client::sanitizePath(const std::string& path, bool addTrailingSlash)
+{
+    // If path doesn't start with "/", add it
+    std::string searchPath = path;
+    if (searchPath[0] != '/') {
+        searchPath = "/" + searchPath;
+    }
+    if (addTrailingSlash && searchPath[searchPath.size() - 1] != '/') {
+        searchPath += "/";
+    }
+    return searchPath;
 }
