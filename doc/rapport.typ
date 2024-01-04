@@ -237,7 +237,6 @@ $
 $
 
 === Folder
-TODO: Check here for encrypted key
 $
   2 "nonces" = 64B\
   1 "aegis256 encrypted name" = "name" + 32B\
@@ -247,7 +246,6 @@ $
 The overhead for a folder is 96 Bytes.
 
 === File
-TODO: Check here for encrypted key
 $
   3 "nonces" = 96B\
   1 "aegis256 encrypted name" = "name" + 32B\
@@ -257,14 +255,23 @@ $
 $
 The overhead for a file is 160 Bytes.
 
+=== Sharing
+For each file or folder that is shared with another user, we need to store the encrypted key for that user. This means the following overhead for each file or folder that is shared:
+$
+  1 "x25519 encrypted key" = 80B\
+  \
+  "total" = 80B
+$
+
 === Total
 The total overhead (in bytes) for a complete system can be computed using the followin formula :
-$ "size" = ("users" * 112) + ("folders" * 96) + ("files" * 160) $
+$ "size" = ("users" * 112) + ("folders" * 96) + ("files" * 160) + ("shares" * 80) $
 
 With
 - `users` beeing the number of users registered in the system
 - `folders` beeing the number of folders in the system
 - `files` beeing the number of files in the system
+- `shares` beeing the number of files and folders that are shared by a user with another user
 
 = Cryptographic choices
 == Key pairs
@@ -414,7 +421,10 @@ The folder's metadata is represented by the following JSON object:
     # Key
     "b64_seed_k": "", # Base64 encoded seed key 
                       # (used to derive the folder's key from the parent folder's key)
-    "e_b64_key": "",  # Base64 encoded encrypted key
+    "e_b64_key": {    # Base64 encoded encrypted key for each user that has direct access to the folder
+        "user1": "",
+        "user2": "",
+    },
 
     # Name
     "b64_seed_n": "", # Base64 encoded seed name 
@@ -424,7 +434,7 @@ The folder's metadata is represented by the following JSON object:
 ```
 
 === File
-A file is represented by two files in the data directory of the server. The first file is the file's content (content). The second file is the file's metadata (name.metadata.json).
+A file is represented by two files in the data directory of the server. The first file is the file's content. The second file is the file's metadata (name.metadata.json).
 
 As for a folder, the name of the file is the file's base64 encoded encrypted name replacing '`/`' with '`&`'. 
 
@@ -434,7 +444,10 @@ The file's metadata is represented by the following JSON object:
     # Key
     "b64_seed_k": "", # Base64 encoded seed key 
                       # (used to derive the file's key from the parent folder's key)
-    "e_b64_key": "",  # Base64 encoded encrypted key
+    "e_b64_key": {    # Base64 encoded encrypted key for each user that has direct access to the file
+        "user1": "",
+        "user2": "",
+    },
 
     # Name
     "b64_seed_n": "", # Base64 encoded seed name 

@@ -175,7 +175,7 @@ Folder Client::getRootFolder() {
     }
 
     // Get encrypted root folder key and seed
-    std::string e_b64_key = response["e_b64_key"];
+    std::string e_b64_key = response["e_b64_key"][Config::getInstance().getUsername()];
     std::string b64_seed_k = response["b64_seed_k"];
 
     // Get private key
@@ -233,7 +233,6 @@ Folder Client::getFolderFromUserPath(const std::string& path) {
             std::string e_b64_name = val["e_b64_name"];
             std::string b64_seed_n = val["b64_seed_n"];
             std::string b64_seed_k = val["b64_seed_k"];
-            std::string e_b64_key = val["e_b64_key"];
 
             // Derive folder key from parent folder key and folder key seed
             SymKey key = SymKey::deriveFromKey(parent.getKey(), b64_seed_k);
@@ -296,7 +295,6 @@ File Client::getFileFromUserPath(const std::string& path) {
         std::string b64_seed_n = val["b64_seed_n"];
         std::string b64_seed_k = val["b64_seed_k"];
         std::string b64_seed_d = val["b64_seed_d"];
-        std::string e_b64_key = val["e_b64_key"];
 
         // Derive file key from parent folder key and file key seed
         SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
@@ -349,12 +347,9 @@ void Client::createFolder(const std::string& path)
     // Get all the data required to create the folder
     std::string b64_seed_n = nameKey.getSaltBase64();
 
-    // Encrypt folder key
-    std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
-
     // Send request to server
     try {
-        nlohmann::json response = WebClient::getInstance().create_folder(parentFolder.getPath(), e_b64_name, b64_seed_n, e_b64_key, b64_seed_k);
+        nlohmann::json response = WebClient::getInstance().create_folder(parentFolder.getPath(), e_b64_name, b64_seed_n, b64_seed_k);
         std::cout << "Successfully created folder " << name << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to create folder " << name << std::endl;
@@ -382,7 +377,6 @@ void Client::listFolder(const std::string& path)
         std::string e_b64_name = val["e_b64_name"];
         std::string b64_seed_n = val["b64_seed_n"];
         std::string b64_seed_k = val["b64_seed_k"];
-        std::string e_b64_key = val["e_b64_key"];
 
         // Derive folder key from parent folder key and folder key seed
         SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
@@ -404,7 +398,6 @@ void Client::listFolder(const std::string& path)
         std::string e_b64_name = val["e_b64_name"];
         std::string b64_seed_n = val["b64_seed_n"];
         std::string b64_seed_k = val["b64_seed_k"];
-        std::string e_b64_key = val["e_b64_key"];
 
         // Derive file key from parent folder key and file key seed
         SymKey key = SymKey::deriveFromKey(tmp.getKey(), b64_seed_k);
@@ -503,12 +496,9 @@ void Client::uploadFile(const std::string& path, const std::string& localName)
         std::string b64_pk = Edx25519_KeyPair::pk_from_sk(b64_sk);
         Edx25519_KeyPair keyPair = Edx25519_KeyPair(b64_sk, b64_pk);
 
-        // Encrypt folder key
-        std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
-
         // Send request to server
         try {
-            nlohmann::json response = WebClient::getInstance().create_file(tmp.getPath(), e_b64_name, b64_seed_n, e_b64_key, b64_seed_k,
+            nlohmann::json response = WebClient::getInstance().create_file(tmp.getPath(), e_b64_name, b64_seed_n, b64_seed_k,
                                                                   e_b64_data, b64_seed_d);
             std::cout << "Successfully uploaded file " << name << std::endl;
         } catch (std::exception& e) {

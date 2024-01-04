@@ -22,7 +22,10 @@ folder metadata:
 {
     # Key
     'b64_seed_k': '',
-    'e_b64_key': '',
+    'e_b64_key': {
+        'user1': '',
+        'user2': '',
+    }
 
     # Name
     'b64_seed_n': '',
@@ -38,7 +41,10 @@ file metadata:
 {
     # Key
     'b64_seed_k': '',
-    'e_b64_key': '',
+    'e_b64_key': {
+        'user1': '',
+        'user2': '',
+    }
 
     # Name
     'b64_seed_n': '',

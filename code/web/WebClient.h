@@ -110,11 +110,10 @@ public:
     * @param parent Path of the parent folder
     * @param e_b64_name The base64 encoded encrypted folder name
     * @param b64_seed_n The base64 encoded folder name seed
-    * @param e_b64_key The base64 encoded encrypted folder key
     * @param b64_seed_k The base64 encoded folder key seed
     * @return The response from the server
     */
-    nlohmann::json create_folder(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& e_b64_key, const std::string& b64_seed_k);
+    nlohmann::json create_folder(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& b64_seed_k);
 
 
     /**
@@ -138,13 +137,12 @@ public:
      * @param parent Path of the parent folder
      * @param e_b64_name The base64 encoded encrypted file name
      * @param b64_seed_n The base64 encoded file name seed
-     * @param e_b64_key The base64 encoded encrypted file key
      * @param b64_seed_k The base64 encoded file key seed
      * @param e_b64_data The base64 encoded encrypted file data
      * @param b64_seed_d The base64 encoded file data seed
      * @return The response from the server
      */
-    nlohmann::json create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& e_b64_key, const std::string& b64_seed_k, const std::string& e_b64_data, const std::string& b64_seed_d);
+    nlohmann::json create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n, const std::string& b64_seed_k, const std::string& e_b64_data, const std::string& b64_seed_d);
 
     /**
      * Get the file at the given path

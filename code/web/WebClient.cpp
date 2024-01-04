@@ -161,7 +161,9 @@ nlohmann::json WebClient::create_root_folder(const std::string& b64_seed_k, cons
     // Build body
     nlohmann::json d_body = nlohmann::json();
     d_body["b64_seed_k"] = b64_seed_k;
-    d_body["e_b64_key"] = e_b64_key;
+    d_body["e_b64_key"] = {
+       {Config::getInstance().getUsername(), e_b64_key}
+    };
     nlohmann::json body = build_body(WebActions::WebAction::CREATE_ROOT_FOLDER, d_body);
 
     // Send request
@@ -265,14 +267,14 @@ nlohmann::json WebClient::list_folder(const std::string& path) {
 }
 
 nlohmann::json WebClient::create_folder(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n,
-                                        const std::string& e_b64_key, const std::string& b64_seed_k)
+                                        const std::string& b64_seed_k)
 {
     // Build body
     nlohmann::json d_body = nlohmann::json();
     d_body["parent"] = parent;
     d_body["e_b64_name"] = e_b64_name;
     d_body["b64_seed_n"] = b64_seed_n;
-    d_body["e_b64_key"] = e_b64_key;
+    d_body["e_b64_key"] = nlohmann::json({});
     d_body["b64_seed_k"] = b64_seed_k;
     nlohmann::json body = build_body(WebActions::WebAction::CREATE_FOLDER, d_body);
 
@@ -329,15 +331,14 @@ nlohmann::json WebClient::delete_folder(const std::string& path)
 }
 
 nlohmann::json WebClient::create_file(const std::string& parent, const std::string& e_b64_name, const std::string& b64_seed_n,
-                                      const std::string& e_b64_key, const std::string& b64_seed_k, const std::string& e_b64_data,
-                                      const std::string& b64_seed_d)
+                                      const std::string& b64_seed_k, const std::string& e_b64_data, const std::string& b64_seed_d)
 {
     // Build body
     nlohmann::json d_body = nlohmann::json();
     d_body["parent"] = parent;
     d_body["e_b64_name"] = e_b64_name;
     d_body["b64_seed_n"] = b64_seed_n;
-    d_body["e_b64_key"] = e_b64_key;
+    d_body["e_b64_key"] = nlohmann::json({});
     d_body["b64_seed_k"] = b64_seed_k;
     d_body["e_b64_data"] = e_b64_data;
     d_body["b64_seed_d"] = b64_seed_d;
