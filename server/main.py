@@ -196,6 +196,23 @@ def api():
                 # Return the session token
                 return jsonify({'session_token': session_token})
             
+        case 'create_root_folder':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Check if the user already has a root folder
+            if os.path.exists(f'{data_folder}/{sessions[session_token]["username"]}'):
+                return jsonify({'message': 'Root folder already exists'})
+
+            # Add the root folder to the list of folders
+            create_root_folder(
+                sessions[session_token]['username'],
+                request_data['b64_seed_k'],
+                request_data['e_b64_key']
+            )
+            
+            return jsonify({'message': 'Root folder created successfully'})
+            
         case 'get_user_password_salt':
             # Check if username exists
             if request_data['username'] not in users:
@@ -270,23 +287,6 @@ def api():
 
             # return the session token
             return jsonify({'session_token': session_token})
-        
-        case 'create_root_folder':
-            if not is_authenticated(session_token):
-                return jsonify({'error': 'Invalid session token'}), 401
-            
-            # Check if the user already has a root folder
-            if os.path.exists(f'{data_folder}/{sessions[session_token]["username"]}'):
-                return jsonify({'message': 'Root folder already exists'})
-
-            # Add the root folder to the list of folders
-            create_root_folder(
-                sessions[session_token]['username'],
-                request_data['b64_seed_k'],
-                request_data['e_b64_key']
-            )
-            
-            return jsonify({'message': 'Root folder created successfully'})
 
         case 'logout':
             if is_authenticated(session_token):
@@ -713,4 +713,4 @@ if __name__ == '__main__':
     atexit.register(at_exit)
 
     # https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
-    app.run(debug=True, port=4242)
+    app.run(debug=False, port=4242)

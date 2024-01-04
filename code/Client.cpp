@@ -197,18 +197,18 @@ Folder Client::getRootFolder() {
 }
 
 Folder Client::getFolderFromUserPath(const std::string& path) {
-    // If user path is root, return root folder key
-    if (path == "/") {
-        return getRootFolder();
+    // If path doesn't start or end with "/", add it
+    std::string searchPath = path;
+    if (searchPath[0] != '/') {
+        searchPath = "/" + searchPath;
+    }
+    if (searchPath[searchPath.size() - 1] != '/') {
+        searchPath += "/";
     }
 
-    // If path doesn't start or end with "/", add it
-    std::string tmp = path;
-    if (tmp[0] != '/') {
-        tmp = "/" + tmp;
-    }
-    if (tmp[tmp.size() - 1] != '/') {
-        tmp += "/";
+    // If user path is root, return root folder key
+    if (searchPath == "/") {
+        return getRootFolder();
     }
 
     Folder parent = getRootFolder();
@@ -249,12 +249,12 @@ Folder Client::getFolderFromUserPath(const std::string& path) {
             std::string folderEPath = i + "/";
 
             // If folder path is the one we are looking for, return encrypted folder path
-            if (folderPath == tmp) {
+            if (folderPath == searchPath) {
                 return {name, folderEPath, key};
             }
 
             // Check if the path starts with the current folder path
-            if (tmp.find(folderPath) == 0) {
+            if (searchPath.find(folderPath) == 0) {
                 // If so, set current folder as parent folder
                 parent = {name, folderEPath, key};
                 currentPath = folderPath;

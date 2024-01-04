@@ -23,26 +23,6 @@ int main(int argc, char** argv)
     // Use CLI11 to parse command line arguments
     CLI::App app{"Effective Octo System Client"};
 
-    // Here's the list of verbs available to the user
-    /*
-     * config <server_name> <server_port>
-     * register <username> <password>
-     * login <username> <password>
-     * logout
-     * upload <path> <file>
-     * download <path> <file>
-     * delete <path> (<file>)
-     * rename_file <file_path> <new_name>
-     * create_folder <path>
-     * delete_folder <path>
-     * rename_folder <folder_path> <new_name>
-     * list <path>
-     * share <path> <username>
-     * revoke <path> <username>
-     * list_shares <path>
-     * list_shared_with_me
-     */
-
     // Config
     CLI::App* config = app.add_subcommand("config", "Configure the server to connect to and display config");
     std::string config_server_name;
@@ -90,7 +70,7 @@ int main(int argc, char** argv)
     delete_->add_option("path", delete_path, "Path of the file to delete")->required();
 
     // Rename file
-    CLI::App* rename_file = app.add_subcommand("rename_file", "Rename a file on the server");
+    CLI::App* rename_file = app.add_subcommand("rename", "Rename a file on the server");
     std::string rename_file_path;
     std::string rename_file_new_name;
     rename_file->add_option("path", rename_file_path, "Path of the file to rename")->required();
