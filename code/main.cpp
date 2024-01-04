@@ -81,8 +81,8 @@ int main(int argc, char** argv)
     CLI::App* upload = app.add_subcommand("upload", "Upload a file to the server");
     std::string upload_path;
     std::string upload_file;
-    upload->add_option("path", upload_path, "File path on the server")->required();
     upload->add_option("file", upload_file, "Local file to upload")->required();
+    upload->add_option("path", upload_path, "File path on the server")->required();
 
     // Download
     CLI::App* download = app.add_subcommand("download", "Download a file from the server");
