@@ -4,10 +4,10 @@ namespace Encryptor
 {
    std::string encrypt(const std::string& content, const SymKey& key)
    {
-       unsigned char ciphertext[content.length() + crypto_aead_aes256gcm_ABYTES];
+       unsigned char ciphertext[content.length() + crypto_aead_aegis256_ABYTES];
        unsigned long long ciphertext_len;
 
-       if (crypto_aead_aes256gcm_encrypt(ciphertext, &ciphertext_len,
+       if (crypto_aead_aegis256_encrypt(ciphertext, &ciphertext_len,
                                          reinterpret_cast<const unsigned char*>(content.c_str()), content.length(),
                                          NULL, 0,
                                          NULL,
@@ -23,10 +23,10 @@ namespace Encryptor
        // Base 64 decode
        std::string decoded = base64_decode(content);
 
-       unsigned char decrypted[decoded.length() - crypto_aead_aes256gcm_ABYTES];
+       unsigned char decrypted[decoded.length() - crypto_aead_aegis256_ABYTES];
        unsigned long long decrypted_len;
 
-       if (crypto_aead_aes256gcm_decrypt(decrypted, &decrypted_len,
+       if (crypto_aead_aegis256_decrypt(decrypted, &decrypted_len,
                                          NULL,
                                          reinterpret_cast<const unsigned char*>(decoded.c_str()), decoded.length(),
                                          NULL, 0,

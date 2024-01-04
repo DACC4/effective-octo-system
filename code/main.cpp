@@ -16,11 +16,6 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    if (crypto_aead_aes256gcm_is_available() == 0) {
-        std::cout << "crypto_aead_aes256gcm_is_available() failed" << std::endl;
-        abort();
-    }
-
     const string config_path = "config.json";
     const string default_server_name = "localhost";
     const unsigned default_server_port = 4242;

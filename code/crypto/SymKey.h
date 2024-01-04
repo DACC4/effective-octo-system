@@ -5,8 +5,8 @@
 #include <string>
 #include "../lib/base64.h"
 
-#define SYMKEY_SALT_SIZE crypto_aead_aes256gcm_KEYBYTES
-#define SYMKEY_KEY_SIZE crypto_aead_aes256gcm_KEYBYTES
+#define SYMKEY_SALT_SIZE crypto_aead_aegis256_NPUBBYTES
+#define SYMKEY_KEY_SIZE crypto_aead_aegis256_KEYBYTES
 #define SYMKEY_OPSLIMIT crypto_pwhash_OPSLIMIT_MIN
 #define SYMKEY_PASSWORD_OPSLIMIT crypto_pwhash_OPSLIMIT_MODERATE
 #define SYMKEY_MEMLIMIT crypto_pwhash_MEMLIMIT_MIN
