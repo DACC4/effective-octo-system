@@ -2,11 +2,11 @@ sequenceDiagram
     actor C as Client
     participant S as Server
 
-    C->>C: Generate random seed
+    C->>C: Generate random nonce
     C->>C: Generate random key
 
-    C->>C: Encrypt key with user public key
+    C->>C: Encrypt key with user public key using X25519
 
-    C->>S: Send seed and encrypted key
+    C->>S: Send nonce and encrypted key
 
-    S->>S: Store user's root folder seed and encrypted key
+    S->>S: Store user's root folder nonce and encrypted key

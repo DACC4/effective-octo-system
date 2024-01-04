@@ -8,6 +8,22 @@
   show math.equation: set text(weight: 400)
   set heading(numbering: "1.1")
 
+  show outline.entry.where(
+    level: 1
+  ): it => {
+    v(12pt, weak: true)
+    strong(it)
+  }
+
+  show outline.entry: it => {
+    if (it.level >= 3) [
+      #set text(style: "italic")
+      #it
+    ] else [
+      #it
+    ]
+  }
+
   // Subtitle information.
   pad(
     x: 2em,

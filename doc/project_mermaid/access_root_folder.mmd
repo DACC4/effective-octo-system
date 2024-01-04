@@ -1,0 +1,10 @@
+sequenceDiagram
+    actor C as Client
+    participant S as Server
+
+    note over C,S: Assume the user has already logged in <br> and is in possession of its private key
+
+    C->>S: Ask the server for the root folder metadata
+    S-->>C: Return the root folder metadata
+
+    C->>C: Decrypt the root folder's key using the user's private key

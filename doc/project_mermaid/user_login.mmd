@@ -2,13 +2,22 @@ sequenceDiagram
     actor C as Client
     participant S as Server
 
-    C->>S: Request login for username
-    S-->>C: Send encrypted private key, salt, and public key
+    C->>S: Request password nonce
+    S-->>C: Send password nonce
 
-    C->>C: Decrypt private key with password
+    C->>C: Hash password with nonce using argon2id
+
+    C->>S: Request login for username, with hashed password using argon2id
+    S->>S: Verify password hash against stored hash. If not equal, return error
+    S-->>C: Send encrypted private key
+
+    C->>C: Hash username using Blake2b to use as nonce
+    C->>C: Decrypt private key with password and nonce
 
     C->>S: Ask for challenge
     S-->>C: Send challenge
     C->>C: Sign challenge with private key
     C->>S: Send signed challenge
     S->>S: Verify signature with public key
+
+    S-->>C: Login successful

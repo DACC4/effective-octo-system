@@ -2,7 +2,9 @@ sequenceDiagram
     actor C as Client
     participant S as Server
 
-    C->>S: Ask the server for the file's folder's metadata
-    S-->>C: Send the file's folder's metadata
+    note over C,S: Assume the user has already logged in <br> and is in possession of the parent folder key
 
-    C->>C: Decrypt the folder's encrypted key with the user's private key
+    C->>S: Ask the server for the folder metadata
+    S-->>C: Send the folder metadata
+
+    C->>C: Derive the folder key from the parent folder key <br> and the folder key nonce
