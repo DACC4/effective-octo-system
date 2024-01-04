@@ -185,7 +185,8 @@ def api():
                     'p_hash': request_data['p_hash'],
                     'p_salt': request_data['p_salt'],
                     'b64_pk': request_data['b64_pk'],
-                    'e_b64_sk': request_data['e_b64_sk']
+                    'e_b64_sk': request_data['e_b64_sk'],
+                    'st': {}
                 }
 
                 # Create a session token
@@ -706,6 +707,7 @@ def api():
             path = request_data['path']
             user = request_data['username']
             e_b64_key = request_data['e_b64_key']
+            e_b64_path = request_data['e_b64_path']
 
             # Remove leading and trailing slash
             path = sanitize_path(path)
@@ -732,6 +734,14 @@ def api():
             with open(f'{data_folder}/{path}/{metadata_file}', 'w') as f:
                 json.dump(metadata, f)
 
+            # Add username in share table of user
+            if username not in users[user]['st']:
+                users[user]['st'][username] = {}
+
+            # Add shared folder to user's list of shared folders
+            if e_b64_path not in users[user]['st']:
+                users[user]['st'][username][e_b64_path] = path
+
             return jsonify({'message': 'Folder shared successfully'})
 
         case 'share_file':
@@ -743,6 +753,7 @@ def api():
             path = request_data['path']
             user = request_data['username']
             e_b64_key = request_data['e_b64_key']
+            e_b64_path = request_data['e_b64_path']
 
             # Remove leading and trailing slash
             path = sanitize_path(path)
@@ -769,7 +780,39 @@ def api():
             with open(f'{data_folder}/{path}/{metadata_file}', 'w') as f:
                 json.dump(metadata, f)
 
+            # Add username in share table of user
+            if username not in users[user]['st']:
+                users[user]['st'][username] = {}
+
+            # Add shared file to user's list of shared files
+            if e_b64_path not in users[user]['st']:
+                users[user]['st'][username][e_b64_path] = path
+
             return jsonify({'message': 'File shared successfully'})
+        
+        case 'get_shared_server_path':
+            if not is_authenticated(session_token):
+                return jsonify({'error': 'Invalid session token'}), 401
+            
+            # Get request data
+            username = sessions[session_token]['username']
+            user = request_data['username']
+            e_b64_path = request_data['e_b64_path']
+
+            # Check if the user exists
+            if user not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Check if the user has shared anything with the user
+            if username not in users[user]['st']:
+                return jsonify({'error': 'User has not shared anything with the user'}), 400
+            
+            # Check if the path exists
+            if e_b64_path not in users[user]['st'][username]:
+                return jsonify({'error': 'Path does not exist'}), 400
+
+            # Return the path
+            return jsonify({'path': users[user]['st'][username][e_b64_path]})
 
         case 'revoke_folder':
             if not is_authenticated(session_token):

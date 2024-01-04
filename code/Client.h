@@ -74,21 +74,24 @@ private:
     std::string sharedPrefix = "/shared/";
     std::string basePath = "/" + Config::getInstance().getUsername() + "/";
 
+    std::string sanitizePath(const std::string& path, bool addTrailingSlash = false);
+
+    std::string getServerPath(const std::string& path);
+
     Folder getRootFolder();
+
     Folder getFolderFromUserPath(const std::string& path);
     File getFileFromUserPath(const std::string& path);
 
-    std::string sanitizePath(const std::string& path, bool addTrailingSlash = false);
-
-    // Shared operations
     Folder getSharedFolderFromPath(const std::string& path);
     File getSharedFileFromPath(const std::string& path);
 
     std::string getFileName(const std::string& path);
     std::string getFolderPath(const std::string& path);
+    std::string getSharedPath(const std::string& path);
+
     bool isFolder(const std::string& path);
     bool isShared(const std::string& path);
-    std::string getSharedPath(const std::string& path);
 };
 
 

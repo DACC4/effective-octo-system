@@ -449,12 +449,14 @@ nlohmann::json WebClient::delete_file(const std::string& path)
     return nlohmann::json::parse(r.body);
 }
 
-nlohmann::json WebClient::share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key){
+nlohmann::json WebClient::share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key, const
+std::string& e_path){
     // Build body
     nlohmann::json d_body = nlohmann::json();
     d_body["path"] = path;
     d_body["username"] = username;
     d_body["e_b64_key"] = e_b64_key;
+    d_body["e_b64_path"] = e_path;
     nlohmann::json body = build_body(WebActions::WebAction::SHARE_FOLDER, d_body);
 
     // Send request
@@ -463,6 +465,25 @@ nlohmann::json WebClient::share_folder(const std::string& path, const std::strin
     // Check response code
     if (r.code != 200){
         throw std::runtime_error("Failed to share folder: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::get_shared_server_path(const std::string& e_b64_path, const std::string& username){
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["e_b64_path"] = e_b64_path;
+    d_body["username"] = username;
+    nlohmann::json body = build_body(WebActions::WebAction::GET_SHARED_SERVER_PATH, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200){
+        throw std::runtime_error("Failed to get shared server path: " + r.body);
     }
 
     // Parse response

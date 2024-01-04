@@ -185,9 +185,19 @@ public:
      * @param path Path of the folder
      * @param username The username of the user to share with
      * @param e_b64_key The base64 encoded encrypted folder key
+     * @param e_b64_path The base64 encoded encrypted folder path
      * @return The response from the server
      */
-    nlohmann::json share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key);
+    nlohmann::json share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key, const std::string&
+    e_b64_path);
+
+    /**
+     * Get server path of a shared folder
+     * @param e_b64_path The base64 encoded encrypted folder path
+     * @param username The username of the user who shared the folder
+     * @return The server path of the shared folder
+     */
+    nlohmann::json get_shared_server_path(const std::string& e_b64_path, const std::string& username);
 private:
    WebClient();
    ~WebClient();

@@ -29,6 +29,7 @@ namespace WebActions
       DELETE_FOLDER,
       SHARE_FOLDER,
       SHARE_FILE,
+      GET_SHARED_SERVER_PATH,
       REVOKE_FOLDER,
       REVOKE_FILE
    };
@@ -56,6 +57,7 @@ namespace WebActions
       "DELETE_FOLDER",
       "SHARE_FOLDER",
       "SHARE_FILE",
+      "GET_SHARED_SERVER_PATH",
       "REVOKE_FOLDER",
       "REVOKE_FILE"
    };

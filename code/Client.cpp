@@ -255,7 +255,7 @@ Folder Client::getFolderFromUserPath(const std::string& path) {
 
             // Folder path
             std::string folderPath = currentPath + name + "/";
-            std::string folderEPath = i + "/";
+            std::string folderEPath = "/" + i + "/";
 
             // If folder path is the one we are looking for, return encrypted folder path
             if (folderPath == searchPath) {
@@ -704,9 +704,12 @@ void Client::shareFolder(const std::string& path, const std::string& username) {
     // Encrypt folder key with user public key
     std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
 
+    // Encrypt folder path with user public key
+    std::string e_b64_path = Encryptor::encrypt(tmp.getPath(), keyPair);
+
     // Send request to server
     try {
-        response = WebClient::getInstance().share_folder(tmp.getPath(), username, e_b64_key);
+        response = WebClient::getInstance().share_folder(tmp.getPath(), username, e_b64_key, e_b64_path);
         std::cout << "Successfully shared folder " << tmp.getName() << " with user " << username << std::endl;
     } catch (std::exception& e) {
         std::cout << "Failed to share folder " << tmp.getName() << " with user " << username << std::endl;
@@ -773,4 +776,9 @@ std::string Client::sanitizePath(const std::string& path, bool addTrailingSlash)
         searchPath += "/";
     }
     return searchPath;
+}
+
+std::string Client::getServerPath(const std::string& path)
+{
+    // Get user
 }
