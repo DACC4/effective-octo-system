@@ -1,27 +1,33 @@
+# Whether to run the server in the test script or not
+runserver=1
+
 # Store current directory
 current_dir=$(pwd)
 
 # ---------------------------
 # ---------------------------
 
-path="server"
-executable="main.py"
-
-# Go to the server directory
-cd $path
-
-# Delete data folder if it exists
-if [ -d "data" ]; then
-    rm -rf data
-fi
-
 # Start the server in the background with all outputs erased and store the PID
-python3 $executable > /dev/null 2>&1 &
-pid=$!
-sleep 1
+if [ $runserver -eq 1 ]; then
+    path="server"
+    executable="main.py"
 
-# Go back to the current directory
-cd $current_dir
+    # Go to the server directory
+    cd $path
+
+    # Delete data folder if it exists
+    if [ -d "data" ]; then
+        rm -rf data
+    fi
+
+    # Start the server in the background with all outputs erased and store the PID
+    python3 $executable > /dev/null 2>&1 &
+    pid=$!
+    sleep 1
+
+    # Go back to the current directory
+    cd $current_dir
+fi
 
 # ---------------------------
 # ---------------------------
@@ -191,5 +197,7 @@ rm example.txt
 # Go back to the current directory
 cd $current_dir
 
-# Kill the server
-kill $pid
+if [ $runserver -eq 1 ]; then
+    # Kill the server
+    kill $pid
+fi
