@@ -742,13 +742,13 @@ bool Client::isShared(const std::string& path)
     return path.find(sharedPrefix) == 0;
 }
 
-Folder Client::getFolderFromSharedPath(const std::string& path)
+Folder Client::getSharedFolderFromPath(const std::string& path)
 {
-    
+
     return getRootFolder();
 }
 
-File Client::getFileFromSharedPath(const std::string& path)
+File Client::getSharedFileFromPath(const std::string& path)
 {
     return getFileFromUserPath(path);
 }

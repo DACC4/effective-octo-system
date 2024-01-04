@@ -73,10 +73,6 @@ def folder_from_path(path, username):
     with open(f'{server_path}/{metadata_file}', 'r') as f:
         metadata = json.load(f)
 
-        # Check if the user has access to the folder
-        if username not in metadata['e_b64_key']:
-            return None
-        
         # Return the folder metadata
         return metadata
 
@@ -91,10 +87,6 @@ def file_from_path(path, username):
     # Get metadata from file
     with open(f'{server_path}{metadata_file}', 'r') as f:
         metadata = json.load(f)
-
-        # Check if the user has access to the file
-        if username not in metadata['e_b64_key']:
-            return None
 
         return metadata
     
@@ -346,7 +338,7 @@ def api():
             name = request_data['e_b64_name']
             parent = request_data['parent']
             seed_k = request_data['b64_seed_k']
-            encrypted_key = request_data['e_b64_key']
+            encrypted_key = {}
             seed_n = request_data['b64_seed_n']
             encrypted_name = request_data['e_b64_name']
 
@@ -385,7 +377,7 @@ def api():
             name = request_data['e_b64_name']
             parent = request_data['parent']
             seed_k = request_data['b64_seed_k']
-            encrypted_key = request_data['e_b64_key']
+            encrypted_key = {}
             seed_n = request_data['b64_seed_n']
             encrypted_name = request_data['e_b64_name']
             seed_d = request_data['b64_seed_d']
@@ -438,6 +430,13 @@ def api():
             if metadata is None:
                 return jsonify({'error': 'File does not exist'}), 400
             
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
+            
             # Return the file metadata
             return jsonify(metadata)
 
@@ -458,6 +457,13 @@ def api():
             # Check if the file exists
             if metadata is None:
                 return jsonify({'error': 'File does not exist'}), 400
+            
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
             
             # Get file content
             content = get_file_content(path)
@@ -485,6 +491,13 @@ def api():
             if metadata is None:
                 return jsonify({'error': 'Folder does not exist'}), 400
             
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
+            
             # Return the folder metadata
             return jsonify(metadata)
 
@@ -507,6 +520,13 @@ def api():
             # Check if the folder exists
             if metadata is None:
                 return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
             
             # Get files and folders in the folder
             files = {}
@@ -550,6 +570,13 @@ def api():
             if metadata is None:
                 return jsonify({'error': 'File does not exist'}), 400
             
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
+            
             # Edit the file metadata
             metadata['e_b64_name'] = e_b64_name
             metadata['b64_seed_n'] = b64_seed_n
@@ -589,6 +616,13 @@ def api():
             # Check if the folder exists
             if metadata is None:
                 return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
             
             # Edit the folder metadata
             metadata['e_b64_name'] = e_b64_name
@@ -650,6 +684,13 @@ def api():
             # Check if the folder exists
             if metadata is None:
                 return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Extract owner from path
+            owner = path.split('/')[0]
+
+            # Check if the user has access to the folder
+            if username != owner and username not in metadata['e_b64_key']:
+                return jsonify({'error': 'User does not have access to the folder'}), 400
             
             # Delete the folder (and its contents)
             shutil.rmtree(f'{data_folder}/{path}')
