@@ -433,3 +433,43 @@ nlohmann::json WebClient::delete_file(const std::string& path)
     // Parse response
     return nlohmann::json::parse(r.body);
 }
+
+nlohmann::json WebClient::share_folder(const std::string& path, const std::string& username, const std::string& e_b64_key){
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    d_body["username"] = username;
+    d_body["e_b64_key"] = e_b64_key;
+    nlohmann::json body = build_body(WebActions::WebAction::SHARE_FOLDER, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200){
+        throw std::runtime_error("Failed to share folder: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}
+
+nlohmann::json WebClient::share_file(const std::string& path, const std::string& username, const std::string& e_b64_key){
+    // Build body
+    nlohmann::json d_body = nlohmann::json();
+    d_body["path"] = path;
+    d_body["username"] = username;
+    d_body["e_b64_key"] = e_b64_key;
+    nlohmann::json body = build_body(WebActions::WebAction::SHARE_FILE, d_body);
+
+    // Send request
+    RestClient::Response r = conn->post(api_url, body.dump());
+
+    // Check response code
+    if (r.code != 200){
+        throw std::runtime_error("Failed to share file: " + r.body);
+    }
+
+    // Parse response
+    return nlohmann::json::parse(r.body);
+}

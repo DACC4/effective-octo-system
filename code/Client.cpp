@@ -610,3 +610,74 @@ std::string Client::getFolderPath(const std::string& path)
     else
         return tmp;
 }
+
+void Client::shareFile(const std::string& path, const std::string& username)
+{
+    // Get file
+    File tmp = getFileFromUserPath(path);
+
+    // Get user public key
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().get_public_key(username);
+    } catch (std::exception& e) {
+        std::cout << "Failed to get public key for user " << username << std::endl;
+        return;
+    }
+
+    // Get public key
+    std::string b64_pk = response["b64_pk"];
+    auto keyPair = Edx25519_KeyPair(b64_pk);
+
+    // Get file key
+    SymKey key = tmp.getKey();
+
+    // Encrypt file key with user public key
+    std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
+
+    // Send request to server
+    try {
+        response = WebClient::getInstance().share_file(tmp.getPath(), username, e_b64_key);
+        std::cout << "Successfully shared file " << tmp.getName() << " with user " << username << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to share file " << tmp.getName() << " with user " << username << std::endl;
+    }
+}
+
+void Client::shareFolder(const std::string& path, const std::string& username)
+{
+    // Get folder
+    Folder tmp = getFolderFromUserPath(path);
+
+    // Get user public key
+    nlohmann::json response;
+    try {
+        response = WebClient::getInstance().get_public_key(username);
+    } catch (std::exception& e) {
+        std::cout << "Failed to get public key for user " << username << std::endl;
+        return;
+    }
+
+    // Get public key
+    std::string b64_pk = response["b64_pk"];
+    auto keyPair = Edx25519_KeyPair(b64_pk);
+
+    // Get folder key
+    SymKey key = tmp.getKey();
+
+    // Encrypt folder key with user public key
+    std::string e_b64_key = Encryptor::encrypt(key.getKeyBase64(), keyPair);
+
+    // Send request to server
+    try {
+        response = WebClient::getInstance().share_folder(tmp.getPath(), username, e_b64_key);
+        std::cout << "Successfully shared folder " << tmp.getName() << " with user " << username << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "Failed to share folder " << tmp.getName() << " with user " << username << std::endl;
+    }
+}
+
+bool Client::isFolder(const std::string& path)
+{
+    return path[path.size() - 1] == '/';
+}

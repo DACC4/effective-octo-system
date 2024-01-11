@@ -22,6 +22,14 @@ public:
     Client() = default;
     ~Client() = default;
 
+   void share(const std::string& path, const std::string& username) {
+       if (isFolder(path)) {
+           shareFolder(path, username);
+       } else {
+           shareFile(path, username);
+       }
+   }
+
     // Authentication
     void registerUser(const std::string& username, const std::string& password);
     void loginUser(const std::string& username, const std::string& password);
@@ -40,6 +48,9 @@ public:
     void renameFile(const std::string& path, const std::string& newName);
     void deleteFile(const std::string& path);
 
+    // Share operations
+    void shareFile(const std::string& path, const std::string& username);
+    void shareFolder(const std::string& path, const std::string& username);
 private:
     Folder getRootFolder();
     Folder getFolderFromUserPath(const std::string& path);
@@ -47,6 +58,8 @@ private:
 
     std::string getFileName(const std::string& path);
     std::string getFolderPath(const std::string& path);
+
+   bool isFolder(const std::string& path);
 };
 
 

@@ -669,15 +669,75 @@ def api():
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to share a folder
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            user = request_data['username']
+            e_b64_key = request_data['e_b64_key']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get folder metadata
+            metadata = folder_from_path(path, username)
+
+            # Check if the folder exists
+            if metadata is None:
+                return jsonify({'error': 'Folder does not exist'}), 400
+            
+            # Check if the user exists
+            if user not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Check if the user already has access to the folder
+            if user in metadata['e_b64_key']:
+                return jsonify({'error': 'User already has direct access to the folder'}), 400
+            
+            # Add the user to the list of users with access to the folder
+            metadata['e_b64_key'][user] = e_b64_key
+
+            # Save the folder metadata
+            with open(f'{data_folder}/{username}/{path}/{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'Folder shared successfully'})
 
         case 'share_file':
             if not is_authenticated(session_token):
                 return jsonify({'error': 'Invalid session token'}), 401
             
-            # Add logic to share a file
-            pass
+            # Get request data
+            username = sessions[session_token]['username']
+            path = request_data['path']
+            user = request_data['username']
+            e_b64_key = request_data['e_b64_key']
+
+            # Remove leading and trailing slash
+            path = sanitize_path(path)
+
+            # Get file metadata
+            metadata = file_from_path(path, username)
+
+            # Check if the file exists
+            if metadata is None:
+                return jsonify({'error': 'File does not exist'}), 400
+            
+            # Check if the user exists
+            if user not in users:
+                return jsonify({'error': 'User does not exist'}), 400
+            
+            # Check if the user already has access to the file
+            if user in metadata['e_b64_key']:
+                return jsonify({'error': 'User already has direct access to the file'}), 400
+            
+            # Add the user to the list of users with access to the file
+            metadata['e_b64_key'][user] = e_b64_key
+
+            # Save the file metadata
+            with open(f'{data_folder}/{path}{metadata_file}', 'w') as f:
+                json.dump(metadata, f)
+
+            return jsonify({'message': 'File shared successfully'})
 
         case 'revoke_folder':
             if not is_authenticated(session_token):

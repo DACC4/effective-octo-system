@@ -101,10 +101,8 @@ int main(int argc, char** argv)
     // Share
     CLI::App* share = app.add_subcommand("share", "Share a file or folder with another user");
     std::string share_path;
-    std::string share_file;
     std::string share_username;
-    share->add_option("path", share_path, "Folder in which the file is or folder to share if no file is specified")->required();
-    share->add_option("file", share_file, "File to share");
+    share->add_option("path", share_path, "Path of the file or folder to share")->required();
     share->add_option("username", share_username, "User to share the file with")->required();
 
     // Revoke
@@ -202,7 +200,7 @@ int main(int argc, char** argv)
     } else if (list->parsed()) {
         client.listFolder(list_path);
     } else if (share->parsed()) {
-        std::cout << "share" << std::endl;
+        client.share(share_path, share_username);
     } else if (revoke->parsed()) {
         std::cout << "revoke" << std::endl;
     } else if (list_shares->parsed()) {

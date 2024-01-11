@@ -191,6 +191,20 @@ echo "\nLisiting root folder"
 
 # ---------------------------
 
+echo "\nCreating new account"
+./$executable register username2 password2
+
+echo "\nLogging in with old account"
+./$executable login username password2
+
+echo "\nSharing /secret2.txt with new account"
+./$executable share /secret2.txt username2
+
+echo "\nSharing /folder2 with new account"
+./$executable share /folder2/ username2
+
+# ---------------------------
+
 # Delete local file
 rm example.txt
 
