@@ -10,15 +10,15 @@ WebClient::WebClient()
 {
     RestClient::init();
 
-    // TODO: Change for HTTPS
     conn = new RestClient::Connection(
-       "http://" +
+       "https://" +
        Config::getInstance().getServerName() +
        ":" +
        std::to_string(Config::getInstance().getServerPort()));
 
     conn->SetTimeout(5);
     conn->SetUserAgent("effective-octo-system-client/0.1");
+    conn->SetCAInfoFilePath("cert.pem");
     RestClient::HeaderFields headers;
     headers["Content-Type"] = "application/json";
     headers["Accept"] = "application/json";

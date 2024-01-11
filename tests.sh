@@ -9,24 +9,17 @@ current_dir=$(pwd)
 
 # Start the server in the background with all outputs erased and store the PID
 if [ $runserver -eq 1 ]; then
-    path="server"
-    executable="main.py"
-
-    # Go to the server directory
-    cd $path
+    executable="docker compose up"
 
     # Delete data folder if it exists
-    if [ -d "data" ]; then
-        rm -rf data
+    if [ -d "server/data" ]; then
+        rm -rf server/data
     fi
 
     # Start the server in the background with all outputs erased and store the PID
-    python3 $executable > /dev/null 2>&1 &
+    $executable > /dev/null 2>&1 &
     pid=$!
     sleep 1
-
-    # Go back to the current directory
-    cd $current_dir
 fi
 
 # ---------------------------
@@ -213,5 +206,5 @@ cd $current_dir
 
 if [ $runserver -eq 1 ]; then
     # Kill the server
-    kill $pid
+    docker compose down
 fi

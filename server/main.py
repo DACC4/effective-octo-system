@@ -757,26 +757,3 @@ def api():
             return jsonify({'error': 'Invalid request type'}), 400
 
     return jsonify({'message': 'Request processed'})
-
-def at_exit():
-    print('Saving users to file ...')
-    # Save users to file
-    with open(f'{data_folder}/users.json', 'w') as f:
-        json.dump(users, f)
-
-if __name__ == '__main__':
-    # Create data folder if it doesn't exist
-    if not os.path.exists(data_folder):
-        os.makedirs(data_folder)
-    else:
-        # Check if users.json exists
-        if os.path.exists(f'{data_folder}/users.json'):
-            # Load users from file
-            with open(f'{data_folder}/users.json', 'r') as f:
-                users = json.load(f)
-
-    # Register at_exit function
-    atexit.register(at_exit)
-
-    # https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https
-    app.run(debug=False, port=4242)
