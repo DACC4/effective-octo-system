@@ -61,7 +61,7 @@ The server will be responsible for user registration while most of the operation
 
 The registration process is as follows:
 #figure(
-  image("project_images/user_registration.svg", width: 90%),
+  image("project_images/user_registration.png", width: 90%),
   caption: [
     User registration
   ],
@@ -72,7 +72,7 @@ After the registration, the client will have to create a root folder for the use
 === User login
 The login process is as follows:
 #figure(
-  image("project_images/user_login.svg", width: 50%),
+  image("project_images/user_login.png", width: 80%),
   caption: [
     User login
   ],
@@ -96,7 +96,7 @@ The root folder is a special folder that is created when a user registers. It is
 
 The root folder creation process is as follows:
 #figure(
-  image("project_images/create_root_folder.svg", width: 60%),
+  image("project_images/create_root_folder.png", width: 60%),
   caption: [
     Folder creation
   ],
@@ -104,7 +104,7 @@ The root folder creation process is as follows:
 
 === Folder creation
 #figure(
-  image("project_images/create_subfolder.svg", width: 100%),
+  image("project_images/create_subfolder.png", width: 100%),
   caption: [
     Folder creation
   ],
@@ -112,7 +112,7 @@ The root folder creation process is as follows:
 
 === File creation
 #figure(
-  image("project_images/create_file.svg", width: 100%),
+  image("project_images/create_file.png", width: 100%),
   caption: [
     File creation
   ],
@@ -122,7 +122,7 @@ The root folder creation process is as follows:
 The process of accessing a file or folder is as follows:
 == Access root folder
 #figure(
-  image("project_images/access_root_folder.svg", width: 60%),
+  image("project_images/access_root_folder.png", width: 60%),
   caption: [
     Accessing the root folder
   ],
@@ -130,7 +130,7 @@ The process of accessing a file or folder is as follows:
 
 == Access folder
 #figure(
-  image("project_images/access_folder.svg", width: 60%),
+  image("project_images/access_folder.png", width: 60%),
   caption: [
     Accessing a folder
   ],
@@ -138,7 +138,7 @@ The process of accessing a file or folder is as follows:
 
 == Access file
 #figure(
-  image("project_images/access_file.svg", width: 60%),
+  image("project_images/access_file.png", width: 60%),
   caption: [
     Accessing a file
   ],
@@ -154,7 +154,7 @@ If a folder is renamed or moved, the client will have to traverse the tree again
 == Sharing
 === Folder sharing
 #figure(
-  image("project_images/share_folder.svg", width: 80%),
+  image("project_images/share_folder.png", width: 80%),
   caption: [
     Folder sharing
   ],
@@ -165,7 +165,7 @@ The root folder cannot be shared or revoked. If a user wants to share their root
 
 === File sharing
 #figure(
-  image("project_images/share_file.svg", width: 80%),
+  image("project_images/share_file.png", width: 80%),
   caption: [
     File sharing
   ],
@@ -177,7 +177,7 @@ The process of revoking access to a file or folder is as follows:
 === Folder
 #info([*Note*: The revokation process is done recursively. If a folder is revoked, all of its subfolders and files keys need to be updated as well. If any subfolder or file was shared with another user, we'll need to send the server the new keys for those files and folders for those users to be able to access them.])
 #figure(
-  image("project_images/revoke_folder.svg", width: 80%),
+  image("project_images/revoke_folder.png", width: 80%),
   caption: [
     Folder revokation
   ],
@@ -185,7 +185,7 @@ The process of revoking access to a file or folder is as follows:
 
 === File
 #figure(
-  image("project_images/revoke_file.svg", width: 100%),
+  image("project_images/revoke_file.png", width: 100%),
   caption: [
     File revokation
   ],
@@ -200,6 +200,8 @@ The server is also responsible of verifying each user identity when they registe
 TLS 1.3 will be used for client-server communication. The server will be authenticated using a valid X.509 certificate. The client will verify the server's certificate and will only communicate with the server if the certificate is valid.
 
 When connecting to the server, the client will ask the user for the server's hostname. The client will then try to connect to the server using the hostname and will verify that the server has a valid certificate for the hostname.
+
+The client has a trusted certificate that it will use to verify the server's certificate. If the file is a CA, the client will use it to verify the server's certificate. If the file is not a CA, the client will use it as the server's certificate.
 
 == Threat model
 The following are the various parts of our threat model:
@@ -460,14 +462,13 @@ The file's metadata is represented by the following JSON object:
 }
 ```
 
-== Performance study
-TODO: 
-
 = How to run the project
 == Requirements
 === Server
 - *Python:* Version 3.10 or higher to run the server
 - *Pip:* To install the server's dependencies
+- *docker (optional):* To run the server using docker
+- *docker-compose (optional):* To run the server using docker
 
 === Client
 ==== Tools
@@ -480,15 +481,41 @@ TODO:
 - *nlohmann_json:* Version 3.11.3 or higher to handle JSON data (#link("https://github.com/nlohmann/json"))
 - *restclient-cpp:* To handle HTTP requests (#link("https://github.com/mrtazz/restclient-cpp"))
 
+== Certificates
+=== Generate selfsigned certificate
+The server uses TLS 1.3 to communicate with the client. This means that the server needs a valid certificate to be able to communicate with the client.
+
+In the `certs` directory, there is a `generate.sh` script that will generate a self-signed certificate for the server. This script will generate a certificate for the hostname `localhost`. This means that the client will need to connect to the server using this hostname.
+
+The script will generate a `cert.pem` and a `cert.key` file in the `certs/out` folder. The server will use these files to communicate with the client.
+
+=== Using an existing certificate
+If you already have a certificate for the server, you can simply replace the `cert.pem` and `cert.key` files in the `certs/out` folder with your own files. If you want to change the path of the certificate files, you can change the docker compose file.
+
+=== Trusting the certificate
+The client is configured to only accept certificates that are either signed by a given CA or that are given. The client will search for the certificate file next to the executable with the name `cert.pem`. 
+
+If the file is a CA, the client will use it to verify the server's certificate. If the file is not a CA, the client will use it as the server's certificate.
+
 == Run the server
-=== Install dependencies
+=== Using docker
+At the root of the project run the following command:
+```bash
+docker-compose up
+```
+This will automatically build the server and run it.
+
+The server will then be accessible at `https://localhost:4242`.
+
+=== Using python
+==== Install dependencies
 ```bash
 pip3 install -r requirements.txt
 ```
 
-=== Run the server
+==== Run the server
 ```bash
-python3 server.py
+python3 wsgi.py
 ```
 
 == Run the client
@@ -512,6 +539,8 @@ make
 
 == Tests
 At the root of project is a `tests.sh` file. This script will run all commands of the project and will test the output of some of them. This script is used to test the project and to make sure that everything is working as expected.
+
+The tests require docker to be installed. They also require the client to be built and the trusted certificate to be in place.
 
 The script will start a new server and will run all commands against it. At the end, it will stop the server. *Beware that the script will empty the data directory of the server.*
 
